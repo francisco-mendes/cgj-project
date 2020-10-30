@@ -6,13 +6,12 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include "Matrix.h"
-#include "Vector.h"
+#include "Camera.h"
+#include "Error.h"
+#include "Shader.h"
+#include "Math/Vector.h"
+#include "Math/Matrix.h"
 
-constexpr float PI = 3.1415927;
-
-constexpr auto VERTICES = 0;
-constexpr auto COLORS   = 1;
 
 enum class Shape : int
 {
@@ -28,188 +27,44 @@ enum class Shape : int
 struct TetrisObj
 {
     Shape  shape;
-    GLuint vao, vbo[2];
+    GLuint vao[2], vbo[2][2];
 
     TetrisObj() = default;
     TetrisObj(float size_x, float size_y, Vector4 color, Shape shape);
 
-    void                   draw(Matrix4 const& transformation) const;
     std::array<Vector2, 4> shapeArray() const;
-    void                   cleanup();
+
+    void draw(Matrix4 const& scale, Matrix4 const& rotation, Matrix4 const& translation) const;
+    void cleanup();
 };
 
-TetrisObj Line, LLeft, T1, T2;
-
-GLuint VertexShaderId, FragmentShaderId, ProgramId;
-GLint  UniformId;
-
-////////////////////////////////////////////////// ERROR CALLBACK (OpenGL 4.3+)
-
-static std::string_view errorSource(GLenum source)
-{
-    switch (source)
-    {
-        case GL_DEBUG_SOURCE_API: return "API";
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "window system";
-        case GL_DEBUG_SOURCE_SHADER_COMPILER: return "shader compiler";
-        case GL_DEBUG_SOURCE_THIRD_PARTY: return "third party";
-        case GL_DEBUG_SOURCE_APPLICATION: return "application";
-        case GL_DEBUG_SOURCE_OTHER: return "other";
-        default: exit(EXIT_FAILURE);
-    }
-}
-
-static std::string_view errorType(GLenum type)
-{
-    switch (type)
-    {
-        case GL_DEBUG_TYPE_ERROR: return "error";
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "deprecated behavior";
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "undefined behavior";
-        case GL_DEBUG_TYPE_PORTABILITY: return "portability issue";
-        case GL_DEBUG_TYPE_PERFORMANCE: return "performance issue";
-        case GL_DEBUG_TYPE_MARKER: return "stream annotation";
-        case GL_DEBUG_TYPE_PUSH_GROUP: return "push group";
-        case GL_DEBUG_TYPE_POP_GROUP: return "pop group";
-        case GL_DEBUG_TYPE_OTHER_ARB: return "other";
-        default: exit(EXIT_FAILURE);
-    }
-}
-
-static std::string_view errorSeverity(GLenum severity)
-{
-    switch (severity)
-    {
-        case GL_DEBUG_SEVERITY_HIGH: return "high";
-        case GL_DEBUG_SEVERITY_MEDIUM: return "medium";
-        case GL_DEBUG_SEVERITY_LOW: return "low";
-        case GL_DEBUG_SEVERITY_NOTIFICATION: return "notification";
-        default: exit(EXIT_FAILURE);
-    }
-}
-
-static void error(GLenum source, GLenum type, GLuint, GLenum severity, GLsizei, const GLchar* message, void const*)
-{
-    std::cerr << "GL ERROR:" << std::endl;
-    std::cerr << "  source:     " << errorSource(source) << std::endl;
-    std::cerr << "  type:       " << errorType(type) << std::endl;
-    std::cerr << "  severity:   " << errorSeverity(severity) << std::endl;
-    std::cerr << "  debug call: " << std::endl << message << std::endl;
-    std::cerr << "Press <return>.";
-    std::cin.ignore();
-}
-
-void setupErrorCallback()
-{
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(error, nullptr);
-    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
-    // params: source, type, severity, count, ids, enabled
-}
-
-/////////////////////////////////////////////////////////////////////// SHADERs
-
-const GLchar* VertexShader =
-    R"(
-#version 330 core
-
-in vec4 in_Position;
-in vec4 in_Color;
-out vec4 ex_Color;
-
-uniform mat4 Matrix;
-
-void main(void)
-{
-	gl_Position = Matrix * in_Position;
-	ex_Color = in_Color;
-}
-    )";
-
-const GLchar* FragmentShader =
-    R"(
-#version 330 core
-
-in vec4 ex_Color;
-out vec4 out_Color;
-
-void main(void)
-{
-    out_Color = ex_Color;
-}
-    )";
-
-void createShaderProgram()
-{
-    VertexShaderId = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(VertexShaderId, 1, &VertexShader, nullptr);
-    glCompileShader(VertexShaderId);
-
-    FragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(FragmentShaderId, 1, &FragmentShader, nullptr);
-    glCompileShader(FragmentShaderId);
-
-    ProgramId = glCreateProgram();
-    glAttachShader(ProgramId, VertexShaderId);
-    glAttachShader(ProgramId, FragmentShaderId);
-
-    glBindAttribLocation(ProgramId, VERTICES, "in_Position");
-    glBindAttribLocation(ProgramId, COLORS, "in_Color");
-
-    glLinkProgram(ProgramId);
-    UniformId = glGetUniformLocation(ProgramId, "Matrix");
-
-    glDetachShader(ProgramId, VertexShaderId);
-    glDeleteShader(VertexShaderId);
-    glDetachShader(ProgramId, FragmentShaderId);
-    glDeleteShader(FragmentShaderId);
-}
-
-void destroyShaderProgram()
-{
-    glUseProgram(0);
-    glDeleteProgram(ProgramId);
-}
+ShaderProgram Shaders;
+TetrisObj     Line, LLeft, T1, T2;
+Camera        Cam;
 
 /////////////////////////////////////////////////////////////////////// VAOs & VBOs
 
-TetrisObj::TetrisObj(float size_x, float size_y, Vector4 color, Shape s)
-    : shape {s}
+void bind_face(GLuint& vao, GLuint vbo[2], Vector4 positions[4], Vector4 colors[4], GLubyte order[6])
 {
-    Vector4 vertex_positions[4] {
-        {-0.5f * size_x, -0.5f * size_y, 0, 1},
-        {0.5f * size_x, -0.5f * size_y, 0, 1},
-        {0.5f * size_x, 0.5f * size_y, 0, 1},
-        {-0.5f * size_x, 0.5f * size_y, 0, 1}
-    };
-    Vector4 vertex_colors[4] {color, color, color, color};
-
-    GLubyte index[2 * 3] {
-        0, 1, 2,
-        2, 3, 0
-    };
-
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     {
         glGenBuffers(2, vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
         {
-            glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_positions) + sizeof(vertex_colors), nullptr, GL_STATIC_DRAW);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex_positions), vertex_positions);
-            glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertex_positions), sizeof(vertex_colors), vertex_colors);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(positions) + sizeof(colors), nullptr, GL_STATIC_DRAW);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(positions), positions);
+            glBufferSubData(GL_ARRAY_BUFFER, sizeof(positions), sizeof(colors), colors);
 
+            glEnableVertexAttribArray(Shaders.Position);
+            glVertexAttribPointer(Shaders.Position, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-            glEnableVertexAttribArray(VERTICES);
-            glVertexAttribPointer(VERTICES, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
-            glEnableVertexAttribArray(COLORS);
-            glVertexAttribPointer(COLORS, 4, GL_FLOAT, GL_FALSE, 0, (void*) sizeof(vertex_positions));
+            glEnableVertexAttribArray(Shaders.Colors);
+            glVertexAttribPointer(Shaders.Colors, 4, GL_FLOAT, GL_FALSE, 0, (void*) sizeof(positions));
         }
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
         {
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index), index, GL_STATIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(order), order, GL_STATIC_DRAW);
         }
     }
     glBindVertexArray(0);
@@ -217,31 +72,64 @@ TetrisObj::TetrisObj(float size_x, float size_y, Vector4 color, Shape s)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+TetrisObj::TetrisObj(float const size_x, float const size_y, Vector4 const color, Shape const shape)
+    : shape {shape}
+{
+    constexpr auto back_delta = Vector4 {0.5, 0.5, 0.5, 0};
+
+    Vector4 positions[4] {
+        {-0.5f * size_x, -0.5f * size_y, 0, 1},
+        {0.5f * size_x, -0.5f * size_y, 0, 1},
+        {0.5f * size_x, 0.5f * size_y, 0, 1},
+        {-0.5f * size_x, 0.5f * size_y, 0, 1}
+    };
+
+    Vector4 front_colors[] {color, color, color, color};
+    Vector4 back_colors[] {color - back_delta, color - back_delta, color - back_delta, color - back_delta};
+
+    GLubyte front_order[] {
+        0, 1, 2,
+        2, 3, 0
+    };
+    GLubyte back_order[] {
+        0, 3, 2,
+        2, 1, 0
+    };
+
+    bind_face(vao[0], vbo[0], positions, front_colors, front_order);
+    bind_face(vao[1], vbo[1], positions, back_colors, back_order);
+}
+
 void TetrisObj::cleanup()
 {
-    glBindVertexArray(vao);
-    glDisableVertexAttribArray(VERTICES);
-    glDisableVertexAttribArray(COLORS);
-    glDeleteBuffers(2, vbo);
-    glDeleteVertexArrays(1, &vao);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    for (int i = 0; i < 2; i++)
+    {
+        glBindVertexArray(vao[i]);
+        glDisableVertexAttribArray(Shaders.Position);
+        glDisableVertexAttribArray(Shaders.Colors);
+        glDeleteBuffers(2, vbo[i]);
+        glDeleteVertexArrays(1, &vao[i]);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
 }
 
 
-void TetrisObj::draw(Matrix4 const& transformation) const
+void TetrisObj::draw(Matrix4 const& scale, Matrix4 const& rotation, Matrix4 const& translation) const
 {
     static auto const SqMargin = Matrix4::scaling(Vector3::filled(0.9f));
 
-    glBindVertexArray(vao);
-    glUseProgram(ProgramId);
-
-    for (const auto& sqr : shapeArray())
+    for (int i = 0; i < 2; i++)
     {
-        auto matrix = transformation * Matrix4::translation(sqr) * SqMargin;
-        glUniformMatrix4fv(UniformId, 1, GL_TRUE, matrix.inner);
-        glDrawElements(GL_TRIANGLES, 3 * 2, GL_UNSIGNED_BYTE, nullptr);
+        glBindVertexArray(vao[i]);
+
+        for (const auto& sqr : shapeArray())
+        {
+            auto matrix = scale * rotation * translation * Matrix4::translation(sqr) * SqMargin;
+            glUniformMatrix4fv(Shaders.modelId(), 1, GL_TRUE, matrix.inner);
+            glDrawElements(GL_TRIANGLES, 3 * 2, GL_UNSIGNED_BYTE, 0);
+        }
     }
 }
 
@@ -269,29 +157,33 @@ std::array<Vector2, 4> TetrisObj::shapeArray() const
 }
 
 /////////////////////////////////////////////////////////////////////// SCENE
-
 void drawScene()
 {
     constexpr auto angle    = PI / 4;
     auto const     scale    = Matrix4::scaling(Vector3::filled(0.25f));
     auto const     rotation = Matrix4::rotation(Axis::Z, angle);
 
-    Line.draw(scale * rotation * Matrix4::translation({-1.5, -1.5, 0}));
-    LLeft.draw(scale * rotation * Matrix4::translation({0.5, -1.5, 0}));
-    T1.draw(scale * Matrix4::rotation(Axis::Z, angle + PI / 2) * Matrix4::translation({-1.5, -0.5, 0}));
-    T2.draw(scale * rotation * Matrix4::translation({-0.5, 0.5, 0}));
+    glUseProgram(Shaders.programId());
 
-    glUseProgram(0);
+    Cam.moveCam();
+    Cam.camBinds();
+
+    Line.draw(scale, rotation, Matrix4::translation({-1.5, -1.5, -3}));
+    LLeft.draw(scale, rotation, Matrix4::translation({0.5, -1.5, -3}));
+    T2.draw(scale, rotation, Matrix4::translation({-0.5, 0.5, -3}));
+    T1.draw(scale, rotation * Matrix4::rotation(Axis::Z, PI / 2), Matrix4::translation({-1.5, -0.5, -3}));
+
     glBindVertexArray(0);
+    glUseProgram(0);
 }
 
 ///////////////////////////////////////////////////////////////////// CALLBACKS
 
 void windowCloseCallback(GLFWwindow* win)
 {
-    destroyShaderProgram();
-
     TetrisObj objs[] {Line, LLeft, T1, T2};
+
+    Shaders.cleanup();
     for (auto& obj : objs) obj.cleanup();
 }
 
@@ -323,14 +215,89 @@ GLFWwindow* setupWindow(
         exit(EXIT_FAILURE);
     }
     glfwMakeContextCurrent(win);
+    glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (glfwRawMouseMotionSupported()) glfwSetInputMode(win, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     glfwSwapInterval(is_vsync);
     return win;
 }
+
+
+void mouseCallback(GLFWwindow* win, double xpos, double ypos)
+{
+    std::cout << "mouse: " << xpos << " " << ypos << std::endl;
+    Cam.rotateCamera(xpos, ypos);
+}
+
+void keyCallback(GLFWwindow* win, int key, int scancode, int action, int mods)
+{
+    //std::cout << "key: " << key << " " << scancode << " " << action << " " << mods << std::endl;
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+        glfwSetWindowShouldClose(win, GLFW_TRUE);
+        windowCloseCallback(win);
+    }
+    else if (key == GLFW_KEY_P && action == GLFW_PRESS)
+    {
+        Cam.ortho = !Cam.ortho;
+    }
+    else if (key == GLFW_KEY_W && action == GLFW_PRESS)
+    {
+        Cam.mForward = 1;
+    }
+    else if (key == GLFW_KEY_A && action == GLFW_PRESS)
+    {
+        Cam.mRight = -1;
+    }
+    else if (key == GLFW_KEY_S && action == GLFW_PRESS)
+    {
+        Cam.mForward = -1;
+    }
+    else if (key == GLFW_KEY_D && action == GLFW_PRESS)
+    {
+        Cam.mRight = 1;
+    }
+    else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+    {
+        Cam.mUp = 1;
+    }
+    else if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
+    {
+        Cam.mUp = -1;
+    }
+    else if (key == GLFW_KEY_W && action == GLFW_RELEASE)
+    {
+        if (Cam.mForward != -1) Cam.mForward = 0;
+    }
+    else if (key == GLFW_KEY_A && action == GLFW_RELEASE)
+    {
+        if (Cam.mRight != 1) Cam.mRight = 0;
+    }
+    else if (key == GLFW_KEY_S && action == GLFW_RELEASE)
+    {
+        if (Cam.mForward != 1) Cam.mForward = 0;
+    }
+    else if (key == GLFW_KEY_D && action == GLFW_RELEASE)
+    {
+        if (Cam.mRight != -1) Cam.mRight = 0;
+    }
+    else if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE)
+    {
+        if (Cam.mUp != -1) Cam.mUp = 0;
+    }
+    else if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
+    {
+        if (Cam.mUp != 1) Cam.mUp = 0;
+    }
+}
+
 
 void setupCallbacks(GLFWwindow* win)
 {
     glfwSetWindowCloseCallback(win, windowCloseCallback);
     glfwSetWindowSizeCallback(win, windowSizeCallback);
+
+    glfwSetCursorPosCallback(win, mouseCallback);
+    glfwSetKeyCallback(win, keyCallback);
 }
 
 GLFWwindow* setupGLFW(int gl_major, int gl_minor, int win_x, int win_y, char const* title, bool fullscreen, bool vsync)
@@ -344,11 +311,12 @@ GLFWwindow* setupGLFW(int gl_major, int gl_minor, int win_x, int win_y, char con
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, gl_minor);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
+
     GLFWwindow* win = setupWindow(win_x, win_y, title, fullscreen, vsync);
     setupCallbacks(win);
 
     #if _DEBUG
-	std::cout << "GLFW " << glfwGetVersionString() << std::endl;
+    std::cout << "GLFW " << glfwGetVersionString() << std::endl;
     #endif
 
     return win;
@@ -383,7 +351,7 @@ void checkOpenGLInfo()
 void setupOpenGL(int win_x, int win_y)
 {
     #if _DEBUG
-	checkOpenGLInfo();
+    checkOpenGLInfo();
     #endif
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -403,12 +371,22 @@ GLFWwindow* setup(int major, int minor, int win_x, int win_y, const char* title,
     GLFWwindow* win = setupGLFW(major, minor, win_x, win_y, title, fullscreen, vsync);
     setupGLEW();
     setupOpenGL(win_x, win_y);
-    createShaderProgram();
+    setupErrorCallback();
+
+    Shaders = ShaderProgram {
+        Shader::fromFile(Shader::Vertex, "Shaders/vert.glsl"),
+        Shader::fromFile(Shader::Fragment, "Shaders/frag.glsl")
+    };
+    std::cerr << "Place 6" << std::endl;
+
+    Cam = Camera({0, 0, 1}, {0, 0, 0}, {0, 1, 0}, 0.01, Shaders.Camera);
 
     Line  = TetrisObj(1, 1, {0.75, 0, 0}, Shape::Line);
     LLeft = TetrisObj(1, 1, {0.75, 0, 0.75}, Shape::LLeft);
     T1    = TetrisObj(1, 1, {0.75, 0.75, 0}, Shape::T);
     T2    = TetrisObj(1, 1, {0.0, 0.75, 0.75}, Shape::T);
+    std::cerr << "Place 7" << std::endl;
+
     return win;
 }
 
@@ -442,13 +420,21 @@ void run(GLFWwindow* win)
 
 int main()
 {
-    int const  gl_major   = 4, gl_minor = 3;
-    bool const fullscreen = false;
-    bool const vsync      = false;
+    try
+    {
+        int const  gl_major   = 4, gl_minor = 3;
+        bool const fullscreen = false;
+        bool const vsync      = true;
 
-    GLFWwindow* win = setup(gl_major, gl_minor, 640, 480, "Tetris 2D", fullscreen, vsync);
-    run(win);
-    exit(EXIT_SUCCESS);
+        GLFWwindow* win = setup(gl_major, gl_minor, 640, 480, "Tetris 2D", fullscreen, vsync);
+        run(win);
+        exit(EXIT_SUCCESS);
+    }
+    catch (std::exception e)
+    {
+        std::cerr << e.what() << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////// END
