@@ -1,9 +1,6 @@
 ﻿#pragma once
 
-#include <ostream>
-#include <cstdint>
-
-enum class Axis: uint8_t { X, Y, Z };
+#include "Utils.h"
 
 struct Vector3;
 struct Vector4;
@@ -77,7 +74,7 @@ Vector3 operator-(Vector3 vec, float scalar);
 Vector3 operator*(Vector3 vec, float scalar);
 Vector3 operator*(float scalar, Vector3 vec);
 
-float operator*(Vector3 left, Vector3 right);
+float   operator*(Vector3 left, Vector3 right);
 Vector3 operator%(Vector3 left, Vector3 right);
 
 bool operator==(Vector3 left, Vector3 right);
@@ -116,7 +113,7 @@ Vector4 operator-(Vector4 vec, float scalar);
 Vector4 operator*(Vector4 vec, float scalar);
 Vector4 operator*(float scalar, Vector4 vec);
 
-float operator*(Vector4 left, Vector4 right);
+float   operator*(Vector4 left, Vector4 right);
 Vector4 operator%(Vector4 left, Vector4 right);
 
 bool operator==(Vector4 left, Vector4 right);

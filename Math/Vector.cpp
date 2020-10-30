@@ -7,18 +7,18 @@ Vector4 Vector4::filled(float const fill) { return {fill, fill, fill, fill}; }
 
 
 Vector2 Vector2::from(float const array[2]) { return {array[0], array[1]}; }
-Vector3 Vector3::from(float const array[3]) { return {array[0], array[1], array[2]};}
-Vector4 Vector4::from(float const array[4]) { return {array[0], array[1], array[2], array[3]};}
+Vector3 Vector3::from(float const array[3]) { return {array[0], array[1], array[2]}; }
+Vector4 Vector4::from(float const array[4]) { return {array[0], array[1], array[2], array[3]}; }
 
 
 Vector3::operator Vector2() const { return {x, y}; }
 Vector4::operator Vector2() const { return {x, y}; }
 
-Vector2::operator Vector3() const { return {x, y, 1}; }
+Vector2::operator Vector3() const { return {x, y, 0}; }
 Vector4::operator Vector3() const { return {x, y, z}; }
 
-Vector2::operator Vector4() const { return {x, y, 1, 1}; }
-Vector3::operator Vector4() const { return {x, y, z, 1}; }
+Vector2::operator Vector4() const { return {x, y, 0, 0}; }
+Vector3::operator Vector4() const { return {x, y, z, 0}; }
 
 
 Vector2 Vector2::absolute() const { return {std::abs(x), std::abs(y)}; }
@@ -47,35 +47,29 @@ Vector4 Vector4::normalized() const
 
 Vector2 Vector2::cleaned() const
 {
-    constexpr auto eps = std::numeric_limits<float>::epsilon();
-    auto const abs     = absolute();
-    Vector2 v {};
-    if (abs.x > eps) v.x = x;
-    if (abs.y > eps) v.y = y;
-    return v;
+    auto const abs = absolute();
+    auto const nx  = abs.x > EPSILON ? x : 0;
+    auto const ny  = abs.y > EPSILON ? y : 0;
+    return {nx, ny};
 }
 
 Vector3 Vector3::cleaned() const
 {
-    constexpr auto eps = std::numeric_limits<float>::epsilon();
-    auto const abs     = absolute();
-    Vector3 v {};
-    if (abs.x > eps) v.x = x;
-    if (abs.y > eps) v.y = y;
-    if (abs.z > eps) v.z = z;
-    return v;
+    auto const abs = absolute();
+    auto const nx  = abs.x > EPSILON ? x : 0;
+    auto const ny  = abs.y > EPSILON ? y : 0;
+    auto const nz  = abs.z > EPSILON ? z : 0;
+    return {nx, ny, nz};
 }
 
 Vector4 Vector4::cleaned() const
 {
-    constexpr auto eps = std::numeric_limits<float>::epsilon();
-    auto const abs     = absolute();
-    Vector4 v {};
-    if (abs.x > eps) v.x = x;
-    if (abs.y > eps) v.y = y;
-    if (abs.z > eps) v.z = z;
-    if (abs.w > eps) v.w = w;
-    return v;
+    auto const abs = absolute();
+    auto const nx  = abs.x > EPSILON ? x : 0;
+    auto const ny  = abs.y > EPSILON ? y : 0;
+    auto const nz  = abs.z > EPSILON ? z : 0;
+    auto const nw  = abs.w > EPSILON ? w : 0;
+    return {nx, ny, nz, nw};
 }
 
 
@@ -171,23 +165,20 @@ Vector4 operator%(Vector4 const left, Vector4 const right) { return Matrix3::dua
 
 bool operator==(Vector2 const left, Vector2 const right)
 {
-    constexpr auto eps = std::numeric_limits<float>::epsilon();
-    auto const [x, y]  = (left - right).absolute();
-    return x < eps && y < eps;
+    auto const [x, y] = (left - right).absolute();
+    return x < EPSILON && y < EPSILON;
 }
 
 bool operator==(Vector3 const left, Vector3 const right)
 {
-    constexpr auto eps   = std::numeric_limits<float>::epsilon();
     auto const [x, y, z] = (left - right).absolute();
-    return x < eps && y < eps && z < eps;
+    return x < EPSILON && y < EPSILON && z < EPSILON;
 }
 
 bool operator==(Vector4 const left, Vector4 const right)
 {
-    constexpr auto eps      = std::numeric_limits<float>::epsilon();
     auto const [x, y, z, w] = (left - right).absolute();
-    return x < eps && y < eps && z < eps && w < eps;
+    return x < EPSILON && y < EPSILON && z < EPSILON && w < EPSILON;
 }
 
 
