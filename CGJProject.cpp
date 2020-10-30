@@ -46,25 +46,29 @@ Camera        Cam;
 
 void bind_face(GLuint& vao, GLuint vbo[2], Vector4 positions[4], Vector4 colors[4], GLubyte order[6])
 {
+    constexpr auto PosSize = sizeof(Vector4) * 4;
+    constexpr auto ColorSize = sizeof(Vector4) * 4;
+    constexpr auto OrderSize = sizeof(Vector4) * 6;
+
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
     {
         glGenBuffers(2, vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
         {
-            glBufferData(GL_ARRAY_BUFFER, sizeof(positions) + sizeof(colors), nullptr, GL_STATIC_DRAW);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(positions), positions);
-            glBufferSubData(GL_ARRAY_BUFFER, sizeof(positions), sizeof(colors), colors);
+            glBufferData(GL_ARRAY_BUFFER, PosSize + ColorSize, nullptr, GL_STATIC_DRAW);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, PosSize, positions);
+            glBufferSubData(GL_ARRAY_BUFFER, PosSize, ColorSize, colors);
 
             glEnableVertexAttribArray(Shaders.Position);
             glVertexAttribPointer(Shaders.Position, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
 
             glEnableVertexAttribArray(Shaders.Colors);
-            glVertexAttribPointer(Shaders.Colors, 4, GL_FLOAT, GL_FALSE, 0, (void*) sizeof(positions));
+            glVertexAttribPointer(Shaders.Colors, 4, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(PosSize));
         }
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
         {
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(order), order, GL_STATIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, OrderSize, order, GL_STATIC_DRAW);
         }
     }
     glBindVertexArray(0);
@@ -377,7 +381,6 @@ GLFWwindow* setup(int major, int minor, int win_x, int win_y, const char* title,
         Shader::fromFile(Shader::Vertex, "Shaders/vert.glsl"),
         Shader::fromFile(Shader::Fragment, "Shaders/frag.glsl")
     };
-    std::cerr << "Place 6" << std::endl;
 
     Cam = Camera({0, 0, 1}, {0, 0, 0}, {0, 1, 0}, 0.01, Shaders.Camera);
 
@@ -385,7 +388,6 @@ GLFWwindow* setup(int major, int minor, int win_x, int win_y, const char* title,
     LLeft = TetrisObj(1, 1, {0.75, 0, 0.75}, Shape::LLeft);
     T1    = TetrisObj(1, 1, {0.75, 0.75, 0}, Shape::T);
     T2    = TetrisObj(1, 1, {0.0, 0.75, 0.75}, Shape::T);
-    std::cerr << "Place 7" << std::endl;
 
     return win;
 }
