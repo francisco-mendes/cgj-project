@@ -39,26 +39,43 @@ public:
     [[nodiscard]] GLuint id() const;
 };
 
+template <class Bindings>
 class ShaderProgram
 {
-public:
-    constexpr static GLuint Position = 0;
-    constexpr static GLuint Colors   = 1;
-
-    constexpr static GLuint Camera = 0;
-
-private:
-    GLuint program_id_;
-    GLint  model_id_, camera_id_;
-
+    GLuint   program_id_;
+    Bindings bindings_;
 public:
     ShaderProgram() = default;
-    ShaderProgram(std::initializer_list<Shader> shaders);
 
-    void cleanup();
+    ShaderProgram(std::initializer_list<Shader> shaders)
+        : program_id_ {glCreateProgram()},
+          bindings_ {}
+    {
+        for (auto const& shader : shaders)
+        {
+            glAttachShader(program_id_, shader.id());
+        }
 
-    [[nodiscard]] GLuint programId() const;
-    [[nodiscard]] GLint  modelId() const;
-    [[nodiscard]] GLint  cameraId() const;
+        bindings_.bindInputs(program_id_);
+
+        glLinkProgram(program_id_);
+
+        bindings_.bindUniforms(program_id_);
+
+        for (auto const& shader : shaders)
+        {
+            glDetachShader(program_id_, shader.id());
+        }
+    }
+
+    void cleanup()
+    {
+        if (program_id_ != 0)
+        {
+            glDeleteProgram(program_id_);
+        }
+    }
+
+    [[nodiscard]] GLuint          programId() const { return program_id_; }
+    [[nodiscard]] Bindings const& bindings() const { return bindings_; }
 };
-
