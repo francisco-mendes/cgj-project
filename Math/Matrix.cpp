@@ -66,7 +66,7 @@ Matrix4 Matrix4::translation(Vector3 const by)
 
 //rotation 
 
-Matrix4 Matrix4::rotation(Axis const ax, float const angle)
+Matrix4 Matrix4::rotation(Axis const ax, Radians const angle)
 {
     auto const cos = std::cos(angle);
     auto const sin = std::sin(angle);
@@ -99,7 +99,7 @@ Matrix4 Matrix4::rotation(Axis const ax, float const angle)
     }
 }
 
-Matrix4 Matrix4::rotation(Vector3 const axis, float const angle)
+Matrix4 Matrix4::rotation(Vector3 const axis, Radians const angle)
 {
     auto const [x, y, z] = axis;
     auto const sine      = sin(angle);
@@ -156,9 +156,9 @@ Matrix4 Matrix4::orthographic(
     return res.transposed();
 }
 
-Matrix4 Matrix4::perspective(float const fov, float const aspect, float const near, float const far)
+Matrix4 Matrix4::perspective(Degrees const fov, float const aspect, float const near, float const far)
 {
-    auto const d = 1 / tan(fov * PI / 360);
+    auto const d = 1 / tan(fov * DegToRad / 2);
 
     return Matrix4 {
         d / aspect, 0, 0, 0,
@@ -220,7 +220,7 @@ Matrix4 Matrix4::transposed() const
 Matrix2 Matrix2::inverted() const
 {
     auto const det = determinant();
-    if (std::abs(det) < EPSILON) throw std::invalid_argument("Singular matrix can't have an inverse");
+    if (std::abs(det) < Epsilon) throw std::invalid_argument("Singular matrix can't have an inverse");
 
     Matrix2 const r {inner[3], -inner[1], -inner[2], inner[0]};
     return r * (1 / det);
@@ -230,7 +230,7 @@ Matrix2 Matrix2::inverted() const
 Matrix3 Matrix3::inverted() const
 {
     auto const det = determinant();
-    if (std::abs(det) < EPSILON) throw std::invalid_argument("Singular matrix can't have an inverse");
+    if (std::abs(det) < Epsilon) throw std::invalid_argument("Singular matrix can't have an inverse");
 
     auto const trans = transposed();
 
@@ -275,7 +275,7 @@ float& Matrix4::operator[](size_t const index) { return inner[index]; }
 
 inline bool eps_eq(float const a, float const b)
 {
-    return std::abs(a - b) < EPSILON;
+    return std::abs(a - b) < Epsilon;
 }
 
 bool operator==(Matrix2 const& left, Matrix2 const& right)

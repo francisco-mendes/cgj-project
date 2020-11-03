@@ -69,12 +69,12 @@ struct Matrix4
     static Matrix4 identity();
     static Matrix4 scaling(Vector3 by);
     static Matrix4 translation(Vector3 by);
-    static Matrix4 rotation(Axis ax, float angle);
-    static Matrix4 rotation(Vector3 axis, float angle);
+    static Matrix4 rotation(Axis ax, Radians angle);
+    static Matrix4 rotation(Vector3 axis, Radians angle);
 
     static Matrix4 view(Vector3 eye, Vector3 center, Vector3 up);
     static Matrix4 orthographic(float left, float right, float bottom, float top, float near, float far);
-    static Matrix4 perspective(float fov, float aspect, float near, float far);
+    static Matrix4 perspective(Degrees fov, float aspect, float near, float far);
 
     Matrix4 transposed() const;
 

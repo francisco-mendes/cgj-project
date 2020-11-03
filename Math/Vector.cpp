@@ -48,27 +48,27 @@ Vector4 Vector4::normalized() const
 Vector2 Vector2::cleaned() const
 {
     auto const abs = absolute();
-    auto const nx  = abs.x > EPSILON ? x : 0;
-    auto const ny  = abs.y > EPSILON ? y : 0;
+    auto const nx  = abs.x > Epsilon ? x : 0;
+    auto const ny  = abs.y > Epsilon ? y : 0;
     return {nx, ny};
 }
 
 Vector3 Vector3::cleaned() const
 {
     auto const abs = absolute();
-    auto const nx  = abs.x > EPSILON ? x : 0;
-    auto const ny  = abs.y > EPSILON ? y : 0;
-    auto const nz  = abs.z > EPSILON ? z : 0;
+    auto const nx  = abs.x > Epsilon ? x : 0;
+    auto const ny  = abs.y > Epsilon ? y : 0;
+    auto const nz  = abs.z > Epsilon ? z : 0;
     return {nx, ny, nz};
 }
 
 Vector4 Vector4::cleaned() const
 {
     auto const abs = absolute();
-    auto const nx  = abs.x > EPSILON ? x : 0;
-    auto const ny  = abs.y > EPSILON ? y : 0;
-    auto const nz  = abs.z > EPSILON ? z : 0;
-    auto const nw  = abs.w > EPSILON ? w : 0;
+    auto const nx  = abs.x > Epsilon ? x : 0;
+    auto const ny  = abs.y > Epsilon ? y : 0;
+    auto const nz  = abs.z > Epsilon ? z : 0;
+    auto const nw  = abs.w > Epsilon ? w : 0;
     return {nx, ny, nz, nw};
 }
 
@@ -166,19 +166,19 @@ Vector4 operator%(Vector4 const left, Vector4 const right) { return Matrix3::dua
 bool operator==(Vector2 const left, Vector2 const right)
 {
     auto const [x, y] = (left - right).absolute();
-    return x < EPSILON && y < EPSILON;
+    return x < Epsilon && y < Epsilon;
 }
 
 bool operator==(Vector3 const left, Vector3 const right)
 {
     auto const [x, y, z] = (left - right).absolute();
-    return x < EPSILON && y < EPSILON && z < EPSILON;
+    return x < Epsilon && y < Epsilon && z < Epsilon;
 }
 
 bool operator==(Vector4 const left, Vector4 const right)
 {
     auto const [x, y, z, w] = (left - right).absolute();
-    return x < EPSILON && y < EPSILON && z < EPSILON && w < EPSILON;
+    return x < Epsilon && y < Epsilon && z < Epsilon && w < Epsilon;
 }
 
 
