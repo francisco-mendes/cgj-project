@@ -12,6 +12,31 @@
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 
+constexpr auto Offset = -3.f;
+
+struct Bindings
+{
+    constexpr static GLuint Position = 0;
+    constexpr static GLuint Colors   = 1;
+
+    constexpr static GLuint Camera = 0;
+
+    GLint  model_id;
+    GLuint camera_id;
+
+    void bindInputs(GLuint const program_id)
+    {
+        glBindAttribLocation(program_id, Position, "in_Position");
+        glBindAttribLocation(program_id, Colors, "in_Color");
+    }
+
+    void bindUniforms(GLuint const program_id)
+    {
+        model_id  = glGetUniformLocation(program_id, "ModelMatrix");
+        camera_id = glGetUniformBlockIndex(program_id, "CameraMatrices");
+        glUniformBlockBinding(program_id, camera_id, Camera);
+    }
+};
 
 enum class Shape : int
 {
@@ -34,19 +59,20 @@ struct TetrisObj
 
     std::array<Vector2, 4> shapeArray() const;
 
-    void draw(Matrix4 const& scale, Matrix4 const& rotation, Matrix4 const& translation) const;
+    void draw(Matrix4 const& rotation, Matrix4 const& translation) const;
     void cleanup();
 };
 
-ShaderProgram Shaders;
-TetrisObj     Line, LLeft, T1, T2;
-Camera        Cam;
+ShaderProgram<Bindings> Shaders;
+
+TetrisObj Line, LLeft, T1, T2;
+Camera    Cam;
 
 /////////////////////////////////////////////////////////////////////// VAOs & VBOs
 
 void bind_face(GLuint& vao, GLuint vbo[2], Vector4 positions[4], Vector4 colors[4], GLubyte order[6])
 {
-    constexpr auto PosSize = sizeof(Vector4) * 4;
+    constexpr auto PosSize   = sizeof(Vector4) * 4;
     constexpr auto ColorSize = sizeof(Vector4) * 4;
     constexpr auto OrderSize = sizeof(Vector4) * 6;
 
@@ -60,11 +86,11 @@ void bind_face(GLuint& vao, GLuint vbo[2], Vector4 positions[4], Vector4 colors[
             glBufferSubData(GL_ARRAY_BUFFER, 0, PosSize, positions);
             glBufferSubData(GL_ARRAY_BUFFER, PosSize, ColorSize, colors);
 
-            glEnableVertexAttribArray(Shaders.Position);
-            glVertexAttribPointer(Shaders.Position, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
+            glEnableVertexAttribArray(Bindings::Position);
+            glVertexAttribPointer(Bindings::Position, 4, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-            glEnableVertexAttribArray(Shaders.Colors);
-            glVertexAttribPointer(Shaders.Colors, 4, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(PosSize));
+            glEnableVertexAttribArray(Bindings::Colors);
+            glVertexAttribPointer(Bindings::Colors, 4, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<void*>(PosSize));
         }
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
         {
@@ -109,8 +135,8 @@ void TetrisObj::cleanup()
     for (int i = 0; i < 2; i++)
     {
         glBindVertexArray(vao[i]);
-        glDisableVertexAttribArray(Shaders.Position);
-        glDisableVertexAttribArray(Shaders.Colors);
+        glDisableVertexAttribArray(Bindings::Position);
+        glDisableVertexAttribArray(Bindings::Colors);
         glDeleteBuffers(2, vbo[i]);
         glDeleteVertexArrays(1, &vao[i]);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -120,19 +146,19 @@ void TetrisObj::cleanup()
 }
 
 
-void TetrisObj::draw(Matrix4 const& scale, Matrix4 const& rotation, Matrix4 const& translation) const
+void TetrisObj::draw(Matrix4 const& rotation, Matrix4 const& translation) const
 {
-    static auto const SqMargin = Matrix4::scaling(Vector3::filled(0.9f));
+    static auto const Margin = Matrix4::scaling(Vector3::filled(0.9f));
 
     for (int i = 0; i < 2; i++)
     {
         glBindVertexArray(vao[i]);
 
-        for (const auto& sqr : shapeArray())
+        for (auto const sqr : shapeArray())
         {
-            auto matrix = scale * rotation * translation * Matrix4::translation(sqr) * SqMargin;
-            glUniformMatrix4fv(Shaders.modelId(), 1, GL_TRUE, matrix.inner);
-            glDrawElements(GL_TRIANGLES, 3 * 2, GL_UNSIGNED_BYTE, 0);
+            auto matrix = rotation * translation * Matrix4::translation(sqr) * Margin;
+            glUniformMatrix4fv(Shaders.bindings().model_id, 1, GL_TRUE, matrix.inner);
+            glDrawElements(GL_TRIANGLES, 3 * 2, GL_UNSIGNED_BYTE, nullptr);
         }
     }
 }
@@ -163,22 +189,13 @@ std::array<Vector2, 4> TetrisObj::shapeArray() const
 /////////////////////////////////////////////////////////////////////// SCENE
 void drawScene()
 {
-    constexpr auto angle    = PI / 4;
-    auto const     scale    = Matrix4::scaling(Vector3::filled(0.25f));
+    constexpr auto angle    = Pi / 4;
     auto const     rotation = Matrix4::rotation(Axis::Z, angle);
 
-    glUseProgram(Shaders.programId());
-
-    Cam.moveCam();
-    Cam.camBinds();
-
-    Line.draw(scale, rotation, Matrix4::translation({-1.5, -1.5, -3}));
-    LLeft.draw(scale, rotation, Matrix4::translation({0.5, -1.5, -3}));
-    T2.draw(scale, rotation, Matrix4::translation({-0.5, 0.5, -3}));
-    T1.draw(scale, rotation * Matrix4::rotation(Axis::Z, PI / 2), Matrix4::translation({-1.5, -0.5, -3}));
-
-    glBindVertexArray(0);
-    glUseProgram(0);
+    Line.draw(rotation, Matrix4::translation({-1.5, -1.5, Offset}));
+    LLeft.draw(rotation, Matrix4::translation({0.5, -1.5, Offset}));
+    T2.draw(rotation, Matrix4::translation({-0.5, 0.5, Offset}));
+    T1.draw(rotation * Matrix4::rotation(Axis::Z, Pi / 2), Matrix4::translation({-1.5, -0.5, Offset}));
 }
 
 ///////////////////////////////////////////////////////////////////// CALLBACKS
@@ -377,7 +394,7 @@ GLFWwindow* setup(int major, int minor, int win_x, int win_y, const char* title,
     setupOpenGL(win_x, win_y);
     setupErrorCallback();
 
-    Shaders = ShaderProgram {
+    Shaders = ShaderProgram<Bindings> {
         Shader::fromFile(Shader::Vertex, "Shaders/vert.glsl"),
         Shader::fromFile(Shader::Fragment, "Shaders/frag.glsl")
     };
@@ -396,7 +413,15 @@ GLFWwindow* setup(int major, int minor, int win_x, int win_y, const char* title,
 
 void display(GLFWwindow* win, double elapsed_sec)
 {
+    glUseProgram(Shaders.programId());
+
+    Cam.moveCam();    
+    Cam.bind();
+
     drawScene();
+
+    glBindVertexArray(0);
+    glUseProgram(0);
 }
 
 void run(GLFWwindow* win)
