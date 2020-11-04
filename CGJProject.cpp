@@ -1,5 +1,3 @@
-#define GLEW_STATIC
-
 #include <array>
 #include <iostream>
 
@@ -399,7 +397,7 @@ GLFWwindow* setup(int major, int minor, int win_x, int win_y, const char* title,
         Shader::fromFile(Shader::Fragment, "Shaders/frag.glsl")
     };
 
-    Cam = Camera({0, 0, 1}, {0, 0, 0}, {0, 1, 0}, 0.01, Shaders.Camera);
+    Cam = Camera({0, 0, 1}, {0, 0, 0}, {0, 1, 0}, 0.01, Bindings::Camera);
 
     Line  = TetrisObj(1, 1, {0.75, 0, 0}, Shape::Line);
     LLeft = TetrisObj(1, 1, {0.75, 0, 0.75}, Shape::LLeft);
@@ -416,7 +414,7 @@ void display(GLFWwindow* win, double elapsed_sec)
     glUseProgram(Shaders.programId());
 
     Cam.moveCam();    
-    Cam.bind();
+    Cam.camBinds();
 
     drawScene();
 
