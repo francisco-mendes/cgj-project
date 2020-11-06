@@ -31,13 +31,13 @@ public:
 private:
     GLuint     buffer_id_;
     Projection projection_;
-    Vector3    focus_,    up_;
-    float      distance_, change_;
+    Vector3    focus_;
+    float      distance_;
     Rotation   rotation_;
 
 public:
     Camera() = default;
-    Camera(float distance, Vector3 focus, Vector3 up, GLuint view_id);
+    Camera(float distance, Vector3 focus, GLuint view_id);
 
     void swapProjection();
     void swapRotationMode();

@@ -1,4 +1,3 @@
-
 #include "Camera.h"
 #include "Math/Matrix.h"
 
@@ -22,12 +21,10 @@ Matrix4 projection(Camera::Projection const type)
 
 MousePosition::operator Vector2() const { return {static_cast<float>(x), static_cast<float>(y)}; }
 
-Camera::Camera(float const distance, Vector3 const focus, Vector3 const up, GLuint const view_id)
+Camera::Camera(float const distance, Vector3 const focus, GLuint const view_id)
     : projection_ {Perspective},
       focus_ {focus},
-      up_ {up},
       distance_ {distance},
-      change_ {},
       rotation_ {Matrix4::identity()}
 {
     glGenBuffers(1, &buffer_id_);
@@ -114,18 +111,17 @@ Matrix4 Camera::rotationMatrix(Vector2 const drag_delta) const
 Camera::Rotation Camera::fullRotation(Vector2 const drag_delta) const
 {
     auto const [dx, dy] = drag_delta * -AngleScale;
-    auto const right = (Facing % up_).normalized();
 
     if (auto const old_rotation = std::get_if<Matrix4>(&rotation_))
     {
-        auto const new_rotation = Matrix4::rotation(right, dy) * Matrix4::rotation(up_, dx);
+        auto const new_rotation = Matrix4::rotation(Axis::X, dy) * Matrix4::rotation(Axis::Y, dx);
         return new_rotation * *old_rotation;
     }
 
     auto const old_rotation = std::get<Quaternion>(rotation_);
     auto const new_rotation =
-        Quaternion::angleBetween(up_, up_ + Facing * dy) *
-        Quaternion::angleBetween(Facing + right * dx, Facing);
+        Quaternion::fromAngleAxis(dy, Axis::X) *
+        Quaternion::fromAngleAxis(dx, Axis::Y);
 
     return old_rotation * new_rotation;
 }

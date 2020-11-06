@@ -393,7 +393,7 @@ GLFWwindow* setup(int major, int minor, int win_x, int win_y, const char* title,
         Shader::fromFile(Shader::Fragment, "Shaders/frag.glsl")
     };
 
-    Cam = Camera(10, {0, 0, Offset}, {0, 1, 0}, Bindings::Camera);
+    Cam = Camera(10, {0, 0, Offset}, Bindings::Camera);
 
     Line  = TetrisObj(1, 1, {0.75, 0, 0}, Shape::Line);
     LLeft = TetrisObj(1, 1, {0.75, 0, 0.75}, Shape::LLeft);
