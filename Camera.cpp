@@ -1,82 +1,175 @@
+
 #include "Camera.h"
+#include "Math/Matrix.h"
 
+#include <iostream>
 
-Camera::Camera(Vector3 pos, Vector3 c, Vector3 u, float cSpeed, GLuint UBO_BP) {
-	position = pos;
-	center = c;
-	up = u;
-	ortho = false;
-	camSpeed = cSpeed;
-	mForward = 0;
-	mRight = 0;
-	mUp = 0;
-	oldX = 0;
-	oldY = 0;
-	glGenBuffers(1, vbo);
-	glBindBuffer(GL_UNIFORM_BUFFER, vbo[0]);
-	{
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(Matrix4) * 2, 0, GL_STREAM_DRAW);
-		glBindBufferBase(GL_UNIFORM_BUFFER, UBO_BP, vbo[0]);
-	}
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-void Camera::moveCam() {
-	Vector3 facing = (center - position).normalized();
-	Vector3 right = (facing % up).normalized();
-	position = position + mForward * camSpeed * facing + mUp * camSpeed * up + mRight * camSpeed * right;
-	center = center + mForward * camSpeed * facing + mUp * camSpeed * up + mRight * camSpeed * right;
+constexpr auto AngleScale = static_cast<float>(DPi / 1000);
+constexpr auto Facing     = Vector3 {0, 0, 1};
 
-
-}
-
-void Camera::rotateCamera(double x, double y)
+Matrix4 projection(Camera::Projection const type)
 {
-	if (b)
-	{
-		oldX = x;
-		oldY = y;
-		b = false;
-	}
-	Vector3 facing = (center - position).normalized();
-	Vector3 right = (facing % up).normalized();
-	double xdif = x - oldX;
-	double ydif = y - oldY;
-	oldX = x;
-	oldY = y;
-	facing = Matrix4::rotation(up, -xdif * 0.00314) * facing;
-	facing = Matrix4::rotation(right, -ydif * 0.00314) * facing;
-	facing = facing.normalized();
-	center = position + facing;
-	//change to rotate around camera axis;
+    switch (type)
+    {
+        case Camera::Orthogonal:
+            return Matrix4::orthographic(-2.0f, 2.0f, -2.0f, 2.0f, 0.5f, 100.0f);
+        case Camera::Perspective:
+            return Matrix4::perspective(30.f, 640.f / 480.f, 0.5f, 100.f);
+        default:
+            throw std::invalid_argument("Invalid projection type");
+    }
 }
 
-Matrix4 Camera::CamView()
+MousePosition::operator Vector2() const { return {static_cast<float>(x), static_cast<float>(y)}; }
+
+Camera::Camera(float const distance, Vector3 const focus, Vector3 const up, GLuint const view_id)
+    : projection_ {Perspective},
+      focus_ {focus},
+      up_ {up},
+      distance_ {distance},
+      change_ {},
+      rotation_ {Matrix4::identity()}
 {
-	Matrix4 m = Matrix4::view(position, center, up);
-	return m;
+    glGenBuffers(1, &buffer_id_);
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer_id_);
+    {
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(Matrix4) * 2, nullptr, GL_STREAM_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, view_id, buffer_id_);
+    }
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-Matrix4 Camera::CamPerpective()
+void Camera::swapProjection()
 {
-	if (ortho)
-	{
-		return Matrix4::orthographic(-2.0f, 2.0f, -2.0f, 2.0f, 1.0f, 10.0f);
-	}
-	else {
-		return Matrix4::perspective(30, 640.f / 480.f, 1, 10);
-	}
+    switch (projection_)
+    {
+        case Orthogonal:
+            projection_ = Perspective;
+            break;
+        case Perspective:
+            projection_ = Orthogonal;
+            break;
+    }
 }
 
-void Camera::camBinds()
+void Camera::swapRotationMode()
 {
-	Matrix4 ViewMatrix = CamView();
-	Matrix4 ProjectionMatrix = CamPerpective();
-
-	glBindBuffer(GL_UNIFORM_BUFFER, vbo[0]);
-	{
-		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Matrix4), ViewMatrix.inner);
-		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(Matrix4), sizeof(Matrix4), ProjectionMatrix.inner);
-	}
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
+    if (auto const mat = std::get_if<Matrix4>(&rotation_))
+    {
+        rotation_ = Quaternion::fromRotationMatrix(*mat);
+        #ifdef _DEBUG
+        std::cerr << "swapped rotation mode to Quaternion" << std::endl;
+        #endif
+    }
+    else if (auto const quat = std::get_if<Quaternion>(&rotation_))
+    {
+        rotation_ = quat->toRotationMatrix();
+        #if _DEBUG
+        std::cerr << "swapped rotation mode to Euler" << std::endl;
+        #endif
+    }
 }
+
+void Camera::rotate(Controller const& controller) { rotation_ = fullRotation(controller.dragDelta()); }
+
+void Camera::rotate(double const frame_delta)
+{
+    constexpr auto Spin = Vector2 {50.f, 0};
+
+    rotation_ = fullRotation(Spin * static_cast<float>(frame_delta));
+}
+
+void Camera::update(Vector2 const drag_delta, float const zoom)
+{
+    distance_ += zoom;
+
+    auto const projection_matrix = projection(projection_);
+    auto const rotation_matrix   = rotationMatrix(drag_delta);
+
+    auto const view_matrix =
+        Matrix4::translation({0, 0, -distance_}) * rotation_matrix.transposed() * Matrix4::translation(-focus_);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, buffer_id_);
+    {
+        glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Matrix4), view_matrix.transposed().inner);
+        glBufferSubData(GL_UNIFORM_BUFFER, sizeof(Matrix4), sizeof(Matrix4), projection_matrix.inner);
+    }
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void Camera::cleanup()
+{
+    glDeleteBuffers(1, &buffer_id_);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+Matrix4 Camera::rotationMatrix(Vector2 const drag_delta) const
+{
+    if (auto const rotation = fullRotation(drag_delta); auto const mat = std::get_if<Matrix4>(&rotation))
+        return *mat;
+    else
+        return std::get<Quaternion>(rotation).toRotationMatrix();
+}
+
+Camera::Rotation Camera::fullRotation(Vector2 const drag_delta) const
+{
+    auto const [dx, dy] = drag_delta * -AngleScale;
+    auto const right = (Facing % up_).normalized();
+
+    if (auto const old_rotation = std::get_if<Matrix4>(&rotation_))
+    {
+        auto const new_rotation = Matrix4::rotation(right, dy) * Matrix4::rotation(up_, dx);
+        return new_rotation * *old_rotation;
+    }
+
+    auto const old_rotation = std::get<Quaternion>(rotation_);
+    auto const new_rotation =
+        Quaternion::angleBetween(up_, up_ + Facing * dy) *
+        Quaternion::angleBetween(Facing + right * dx, Facing);
+
+    return old_rotation * new_rotation;
+}
+
+
+Controller::Controller(Camera&& camera)
+    : dragging_ {},
+      drag_start_ {},
+      drag_now_ {},
+      scroll_ {},
+      camera_ {std::move(camera)} {}
+
+void Controller::startDrag(MousePosition const mouse_position)
+{
+    dragging_   = true;
+    drag_start_ = drag_now_ = mouse_position;
+}
+
+void Controller::rotateDrag(MousePosition const mouse_position) { drag_now_ = mouse_position; }
+
+void Controller::finishDrag()
+{
+    camera_.rotate(*this);
+    dragging_   = false;
+    drag_start_ = drag_now_ = Vector2 {};
+}
+
+void Controller::scroll(double const by) { scroll_ += by; }
+
+void Controller::update(double const frame_delta) { camera_.update(dragDelta(), scrollDelta(frame_delta)); }
+
+Vector2 Controller::dragDelta() const { return drag_now_ - drag_start_; }
+bool    Controller::isDragging() const { return dragging_; }
+
+float Controller::scrollDelta(double const frame_delta)
+{
+    constexpr auto Min   = 1.5;
+    constexpr auto Scale = 0.75;
+    constexpr auto Speed = 5.0;
+
+    auto const magnitude = std::min(std::abs(scroll_ * Speed * frame_delta), Min);
+    auto const change    = std::copysign(magnitude, scroll_);
+    scroll_ -= change;
+    return static_cast<float>(-change * Scale);
+}
+
+Camera& Controller::camera() { return camera_; }
