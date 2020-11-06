@@ -10,6 +10,9 @@
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
 
+constexpr auto ViewWidth  = 640;
+constexpr auto ViewHeight = 480;
+
 constexpr auto Offset = -3.f;
 
 struct Bindings
@@ -63,8 +66,8 @@ struct TetrisObj
 
 ShaderProgram<Bindings> Shaders;
 
-TetrisObj Line, LLeft, T1, T2;
-Camera    Cam;
+TetrisObj  Line, LLeft, T1, T2;
+Controller Cam;
 
 /////////////////////////////////////////////////////////////////////// VAOs & VBOs
 
@@ -216,6 +219,67 @@ void glfwErrorCallback(int error, const char* description)
     std::cerr << "GLFW Error: " << description << std::endl;
 }
 
+
+void mouseCallback(GLFWwindow* win, int button, int action, int mods)
+{
+    if (button != GLFW_MOUSE_BUTTON_1) return;
+
+    if (action == GLFW_PRESS)
+    {
+        double x_pos, y_pos;
+        glfwGetCursorPos(win, &x_pos, &y_pos);
+        Cam.startDrag({x_pos, y_pos});
+
+        #if _DEBUG
+        std::cerr << "start pos: " << x_pos << ", " << y_pos << std::endl;
+        #endif
+    }
+    else if (action == GLFW_RELEASE)
+    {
+        Cam.finishDrag();
+    }
+}
+
+void scrollCallback([[maybe_unused]] GLFWwindow* win, double const x_pos, double const y_pos)
+{
+    #if _DEBUG
+    std::cerr << "zoom: " << x_pos << " " << y_pos << std::endl;
+    #endif
+
+    Cam.scroll(y_pos);
+}
+
+void dragCallback(GLFWwindow* win, double const x_pos, double const y_pos)
+{
+    if (auto const button_state = glfwGetMouseButton(win, GLFW_MOUSE_BUTTON_1); button_state == GLFW_PRESS)
+    {
+        #if _DEBUG
+        std::cerr << "position: " << x_pos << ", " << y_pos << std::endl;
+        #endif
+
+        Cam.rotateDrag({x_pos, y_pos});
+    }
+}
+
+void keyCallback(GLFWwindow* win, int const key, int, int const action, int)
+{
+    if (action == GLFW_PRESS)
+        switch (key)
+        {
+            case GLFW_KEY_ESCAPE:
+                glfwSetWindowShouldClose(win, GLFW_TRUE);
+                windowCloseCallback(win);
+                break;
+            case GLFW_KEY_P:
+                Cam.camera().swapProjection();
+                break;
+            case GLFW_KEY_G:
+                Cam.camera().swapRotationMode();
+                break;
+        }
+}
+
+
 ///////////////////////////////////////////////////////////////////////// SETUP
 
 GLFWwindow* setupWindow(
@@ -234,88 +298,20 @@ GLFWwindow* setupWindow(
         exit(EXIT_FAILURE);
     }
     glfwMakeContextCurrent(win);
-    glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    if (glfwRawMouseMotionSupported()) glfwSetInputMode(win, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    glfwSetCursor(win, glfwCreateStandardCursor(GLFW_HAND_CURSOR));
     glfwSwapInterval(is_vsync);
     return win;
 }
-
-
-void mouseCallback(GLFWwindow* win, double xpos, double ypos)
-{
-    std::cout << "mouse: " << xpos << " " << ypos << std::endl;
-    Cam.rotateCamera(xpos, ypos);
-}
-
-void keyCallback(GLFWwindow* win, int key, int scancode, int action, int mods)
-{
-    //std::cout << "key: " << key << " " << scancode << " " << action << " " << mods << std::endl;
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(win, GLFW_TRUE);
-        windowCloseCallback(win);
-    }
-    else if (key == GLFW_KEY_P && action == GLFW_PRESS)
-    {
-        Cam.ortho = !Cam.ortho;
-    }
-    else if (key == GLFW_KEY_W && action == GLFW_PRESS)
-    {
-        Cam.mForward = 1;
-    }
-    else if (key == GLFW_KEY_A && action == GLFW_PRESS)
-    {
-        Cam.mRight = -1;
-    }
-    else if (key == GLFW_KEY_S && action == GLFW_PRESS)
-    {
-        Cam.mForward = -1;
-    }
-    else if (key == GLFW_KEY_D && action == GLFW_PRESS)
-    {
-        Cam.mRight = 1;
-    }
-    else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-    {
-        Cam.mUp = 1;
-    }
-    else if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS)
-    {
-        Cam.mUp = -1;
-    }
-    else if (key == GLFW_KEY_W && action == GLFW_RELEASE)
-    {
-        if (Cam.mForward != -1) Cam.mForward = 0;
-    }
-    else if (key == GLFW_KEY_A && action == GLFW_RELEASE)
-    {
-        if (Cam.mRight != 1) Cam.mRight = 0;
-    }
-    else if (key == GLFW_KEY_S && action == GLFW_RELEASE)
-    {
-        if (Cam.mForward != 1) Cam.mForward = 0;
-    }
-    else if (key == GLFW_KEY_D && action == GLFW_RELEASE)
-    {
-        if (Cam.mRight != -1) Cam.mRight = 0;
-    }
-    else if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE)
-    {
-        if (Cam.mUp != -1) Cam.mUp = 0;
-    }
-    else if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_RELEASE)
-    {
-        if (Cam.mUp != 1) Cam.mUp = 0;
-    }
-}
-
 
 void setupCallbacks(GLFWwindow* win)
 {
     glfwSetWindowCloseCallback(win, windowCloseCallback);
     glfwSetWindowSizeCallback(win, windowSizeCallback);
 
-    glfwSetCursorPosCallback(win, mouseCallback);
+    glfwSetMouseButtonCallback(win, mouseCallback);
+    glfwSetScrollCallback(win, scrollCallback);
+    glfwSetCursorPosCallback(win, dragCallback);
     glfwSetKeyCallback(win, keyCallback);
 }
 
@@ -335,7 +331,7 @@ GLFWwindow* setupGLFW(int gl_major, int gl_minor, int win_x, int win_y, char con
     setupCallbacks(win);
 
     #if _DEBUG
-    std::cout << "GLFW " << glfwGetVersionString() << std::endl;
+    std::cerr << "GLFW " << glfwGetVersionString() << std::endl;
     #endif
 
     return win;
@@ -397,7 +393,7 @@ GLFWwindow* setup(int major, int minor, int win_x, int win_y, const char* title,
         Shader::fromFile(Shader::Fragment, "Shaders/frag.glsl")
     };
 
-    Cam = Camera({0, 0, 1}, {0, 0, 0}, {0, 1, 0}, 0.01, Bindings::Camera);
+    Cam = Camera(10, {0, 0, Offset}, {0, 1, 0}, Bindings::Camera);
 
     Line  = TetrisObj(1, 1, {0.75, 0, 0}, Shape::Line);
     LLeft = TetrisObj(1, 1, {0.75, 0, 0.75}, Shape::LLeft);
@@ -413,8 +409,9 @@ void display(GLFWwindow* win, double elapsed_sec)
 {
     glUseProgram(Shaders.programId());
 
-    Cam.moveCam();    
-    Cam.camBinds();
+    if (glfwGetMouseButton(win, GLFW_MOUSE_BUTTON_1) != GLFW_PRESS)
+        Cam.camera().rotate(elapsed_sec);
+    Cam.update(elapsed_sec);
 
     drawScene();
 
@@ -451,7 +448,7 @@ int main()
         bool const fullscreen = false;
         bool const vsync      = true;
 
-        GLFWwindow* win = setup(gl_major, gl_minor, 640, 480, "Tetris 2D", fullscreen, vsync);
+        GLFWwindow* win = setup(gl_major, gl_minor, ViewWidth, ViewHeight, "Tetris 2D", fullscreen, vsync);
         run(win);
         exit(EXIT_SUCCESS);
     }
@@ -461,5 +458,3 @@ int main()
         exit(EXIT_FAILURE);
     }
 }
-
-/////////////////////////////////////////////////////////////////////////// END
