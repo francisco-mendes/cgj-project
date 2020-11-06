@@ -9,6 +9,7 @@ struct Quaternion
     static Quaternion fromComponents(Vector4 components);
     static Quaternion fromRotationMatrix(Matrix4 const& rotation);
     static Quaternion fromParts(float t, Vector3 vec);
+    static Quaternion fromAngleAxis(Radians angle, Axis axis);
     static Quaternion fromAngleAxis(Radians angle, Vector3 axis);
     static Quaternion angleBetween(Vector3 vec1, Vector3 vec2);
 

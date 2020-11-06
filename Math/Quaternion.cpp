@@ -32,6 +32,21 @@ Quaternion Quaternion::fromParts(float const t, Vector3 const vec)
     return {t, x, y, z};
 }
 
+Quaternion Quaternion::fromAngleAxis(Radians const angle, Axis const axis)
+{
+    auto const t = cos(angle / 2.f);
+    auto const v = sin(angle / 2.f);
+
+    switch (axis)
+    {
+        case Axis::X: return Quaternion {t, v, 0, 0}.cleaned().normalized();
+        case Axis::Y: return Quaternion {t, 0, v, 0}.cleaned().normalized();
+        case Axis::Z: return Quaternion {t, 0, 0, v}.cleaned().normalized();
+        default:
+            throw std::invalid_argument("Invalid axis provided for quaternion");
+    }
+}
+
 Quaternion Quaternion::fromAngleAxis(Radians const angle, Vector3 const axis)
 {
     auto const t         = cos(angle / 2.f);
