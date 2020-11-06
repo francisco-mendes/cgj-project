@@ -77,6 +77,7 @@ struct Matrix4
     static Matrix4 perspective(Degrees fov, float aspect, float near, float far);
 
     Matrix4 transposed() const;
+    Vector4 trace() const;
 
     float operator[](size_t index) const;
     float& operator[](size_t index);

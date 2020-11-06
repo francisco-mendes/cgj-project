@@ -1,9 +1,29 @@
 ﻿#include "Quaternion.h"
 
-Quaternion Quaternion::fromVector(Vector4 const components)
+Quaternion Quaternion::identity()
+{
+    return {1, 0, 0, 0};
+}
+
+Quaternion Quaternion::fromComponents(Vector4 const components)
 {
     auto const [t, x, y, z] = components;
     return {t, x, y, z};
+}
+
+Quaternion Quaternion::fromRotationMatrix(Matrix4 const& rotation)
+{
+    const auto [a, b, c, _] = rotation.trace();
+    auto const w            = std::sqrt(std::max(0.f, 1 + a + b + c)) / 2;
+    auto const tx           = std::sqrt(std::max(0.f, 1 + a - b - c)) / 2;
+    auto const ty           = std::sqrt(std::max(0.f, 1 - a + b - c)) / 2;
+    auto const tz           = std::sqrt(std::max(0.f, 1 - a - b + c)) / 2;
+
+    auto const x = std::copysign(tx, rotation[9] - rotation[6]);
+    auto const y = std::copysign(ty, rotation[2] - rotation[8]);
+    auto const z = std::copysign(tz, rotation[4] - rotation[1]);
+
+    return {w, x, y, z};
 }
 
 Quaternion Quaternion::fromParts(float const t, Vector3 const vec)
@@ -22,6 +42,13 @@ Quaternion Quaternion::fromAngleAxis(Radians const angle, Vector3 const axis)
     return res.cleaned().normalized();
 }
 
+Quaternion Quaternion::angleBetween(Vector3 const vec1, Vector3 const vec2)
+{
+    auto const norm      = std::sqrt(vec1.quadrance() * vec2.quadrance());
+    auto const real_part = norm + vec1 * vec2;
+    return fromParts(real_part, vec1 % vec2).cleaned().normalized();
+}
+
 std::pair<Radians, Vector4> Quaternion::toAngleAxis() const
 {
     auto const [t, v] = normalized().toParts();
@@ -35,9 +62,9 @@ std::pair<Radians, Vector4> Quaternion::toAngleAxis() const
 
 std::pair<float, Vector3> Quaternion::toParts() const { return {t, {x, y, z}}; }
 
-Vector4 Quaternion::toVector() const { return {t, x, y, z}; }
+Vector4 Quaternion::toComponents() const { return {t, x, y, z}; }
 
-Matrix4 Quaternion::toMatrix() const
+Matrix4 Quaternion::toRotationMatrix() const
 {
     auto const [t, x, y, z] = normalized();
 
@@ -61,40 +88,40 @@ Matrix4 Quaternion::toMatrix() const
     };
 }
 
-float Quaternion::quadrance() const { return toVector().quadrance(); }
+float Quaternion::quadrance() const { return toComponents().quadrance(); }
 float Quaternion::magnitude() const { return std::sqrt(quadrance()); }
 
-Quaternion Quaternion::absolute() const { return fromVector(toVector().absolute()); }
-Quaternion Quaternion::normalized() const { return fromVector(toVector().normalized()); }
-Quaternion Quaternion::cleaned() const { return fromVector(toVector().cleaned()); }
+Quaternion Quaternion::absolute() const { return fromComponents(toComponents().absolute()); }
+Quaternion Quaternion::normalized() const { return fromComponents(toComponents().normalized()); }
+Quaternion Quaternion::cleaned() const { return fromComponents(toComponents().cleaned()); }
 
 Quaternion Quaternion::conjugated() const { return {t, -x, -y, -z}; }
 Quaternion Quaternion::inverted() const { return conjugated() * (1.f / quadrance()); }
 
 Quaternion Quaternion::lerp(float const scale, Quaternion const start, Quaternion const end)
 {
-    auto const angle   = start.toVector() * end.toVector();
+    auto const angle   = start.toComponents() * end.toComponents();
     auto const k_start = 1.f - scale;
     auto const k_end   = angle > 0 ? scale : -scale;
-    return (k_start * start + k_end * end).normalized();
+    return (k_start * start + k_end * end).cleaned().normalized();
 }
 
 Quaternion Quaternion::slerp(float const scale, Quaternion const start, Quaternion const end)
 {
-    auto const angle   = start.toVector() * end.toVector();
+    auto const angle   = start.toComponents() * end.toComponents();
     auto const k_start = std::sin((1.f - scale) * angle) / std::sin(angle);
     auto const k_end   = std::sin(scale * angle) / std::sin(angle);
-    return (k_start * start + k_end * end).normalized();
+    return (k_start * start + k_end * end).cleaned().normalized();
 }
 
 Quaternion operator+(Quaternion const left, Quaternion const right)
 {
-    return Quaternion::fromVector(left.toVector() + right.toVector());
+    return Quaternion::fromComponents(left.toComponents() + right.toComponents());
 }
 
 Quaternion operator-(Quaternion const left, Quaternion const right)
 {
-    return Quaternion::fromVector(left.toVector() - right.toVector());
+    return Quaternion::fromComponents(left.toComponents() - right.toComponents());
 }
 
 Quaternion operator*(Quaternion const left, Quaternion const right)
@@ -109,12 +136,12 @@ Quaternion operator*(Quaternion const left, Quaternion const right)
 
 Quaternion operator*(Quaternion const left, float const right)
 {
-    return Quaternion::fromVector(left.toVector() * right);
+    return Quaternion::fromComponents(left.toComponents() * right);
 }
 
 Quaternion operator*(float const left, Quaternion const right) { return right * left; }
 
-bool operator==(Quaternion const left, Quaternion const right) { return left.toVector() == right.toVector(); }
+bool operator==(Quaternion const left, Quaternion const right) { return left.toComponents() == right.toComponents(); }
 bool operator!=(Quaternion const left, Quaternion const right) { return !(left == right); }
 
 std::ostream& operator<<(std::ostream& os, Quaternion const q)

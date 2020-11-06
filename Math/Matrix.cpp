@@ -215,6 +215,10 @@ Matrix4 Matrix4::transposed() const
     return res;
 }
 
+// trace
+
+Vector4 Matrix4::trace() const { return {inner[0], inner[5], inner[10], inner[15]}; }
+
 //inverse
 
 Matrix2 Matrix2::inverted() const

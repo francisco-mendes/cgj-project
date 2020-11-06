@@ -5,14 +5,18 @@
 
 struct Quaternion
 {
-    static Quaternion fromVector(Vector4 components);
+    static Quaternion identity();
+    static Quaternion fromComponents(Vector4 components);
+    static Quaternion fromRotationMatrix(Matrix4 const& rotation);
     static Quaternion fromParts(float t, Vector3 vec);
     static Quaternion fromAngleAxis(Radians angle, Vector3 axis);
+    static Quaternion angleBetween(Vector3 vec1, Vector3 vec2);
+
 
     std::pair<Radians, Vector4> toAngleAxis() const;
     std::pair<float, Vector3>   toParts() const;
-    Vector4                     toVector() const;
-    Matrix4                     toMatrix() const;
+    Vector4                     toComponents() const;
+    Matrix4                     toRotationMatrix() const;
 
     float quadrance() const;
     float magnitude() const;
