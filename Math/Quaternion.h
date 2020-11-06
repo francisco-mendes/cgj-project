@@ -12,7 +12,6 @@ struct Quaternion
     static Quaternion fromAngleAxis(Radians angle, Vector3 axis);
     static Quaternion angleBetween(Vector3 vec1, Vector3 vec2);
 
-
     std::pair<Radians, Vector4> toAngleAxis() const;
     std::pair<float, Vector3>   toParts() const;
     Vector4                     toComponents() const;

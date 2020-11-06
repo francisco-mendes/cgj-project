@@ -189,18 +189,15 @@ bool operator!=(Vector4 const left, Vector4 const right) { return !(left == righ
 
 std::ostream& operator<<(std::ostream& os, Vector2 const v)
 {
-    os << '{' << v.x << ", " << v.y << '}';
-    return os;
+    return os << '{' << v.x << ", " << v.y << '}';
 }
 
 std::ostream& operator<<(std::ostream& os, Vector3 const v)
 {
-    os << '{' << v.x << ", " << v.y << ", " << v.z << '}';
-    return os;
+    return os << '{' << v.x << ", " << v.y << ", " << v.z << '}';
 }
 
 std::ostream& operator<<(std::ostream& os, Vector4 const v)
 {
-    os << '{' << v.x << ", " << v.y << ", " << v.z << ", " << v.w << '}';
-    return os;
+    return os << '{' << v.x << ", " << v.y << ", " << v.z << ", " << v.w << '}';
 }

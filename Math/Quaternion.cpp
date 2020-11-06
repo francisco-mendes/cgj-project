@@ -146,6 +146,5 @@ bool operator!=(Quaternion const left, Quaternion const right) { return !(left =
 
 std::ostream& operator<<(std::ostream& os, Quaternion const q)
 {
-    os << '(' << q.t << ", " << q.x << "i, " << q.y << "j, " << q.z << 'k)';
-    return os;
+    return os << '(' << q.t << ", " << q.x << "i, " << q.y << "j, " << q.z << "k)";
 }
