@@ -1,9 +1,15 @@
 ﻿#version 330 core
 
-in vec4 in_Position;
-in vec4 in_Color;
+in vec3 in_Position;
+in vec2 in_Texcoord;
+in vec3 in_Normal;
+
+out vec3 ex_Position;
+out vec2 ex_Texcoord;
+out vec3 ex_Normal;
 out vec4 ex_Color;
 
+uniform vec4 Color;
 uniform mat4 ModelMatrix;
 
 uniform CameraMatrices
@@ -14,6 +20,9 @@ uniform CameraMatrices
 
 void main(void)
 {
-	gl_Position = ProjectionMatrix * ViewMatrix * ModelMatrix * in_Position;
-	ex_Color = in_Color;
+	ex_Position = in_Position;
+	ex_Texcoord = in_Texcoord;
+	ex_Normal = in_Normal;
+	gl_Position = ProjectionMatrix * ViewMatrix * ModelMatrix * vec4(in_Position, 1);
+	ex_Color = Color;
 }
