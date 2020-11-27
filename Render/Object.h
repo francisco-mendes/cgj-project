@@ -1,8 +1,5 @@
 ﻿#pragma once
 
-#include <deque>
-#include <vector>
-
 #include "Mesh.h"
 #include "Shader.h"
 #include "Transform.h"
@@ -10,9 +7,6 @@
 
 namespace render
 {
-    template <class Type>
-    using Deque = std::pmr::deque<Type>;
-
     struct Object
     {
         [[nodiscard]] explicit Object(
@@ -32,7 +26,7 @@ namespace render
 
         Vector4       color;
         Transform     transform;
-        Deque<Object> children;
+        std::list<Object> children;
 
         std::optional<Animation> animation;
     };

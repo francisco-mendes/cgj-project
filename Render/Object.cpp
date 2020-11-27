@@ -24,6 +24,7 @@ namespace render
             if (animation->active()) { animation->reverse(); }
             else { animation->activate(); }
         }
+        for (auto& child : children) { child.animate(); }
     }
 
     void Object::update(double const elapsed_sec)
@@ -31,7 +32,7 @@ namespace render
         if (animation && animation->active())
             transform = animation->advance(elapsed_sec);
 
-        for (auto& child : children) { child->update(elapsed_sec); }
+        for (auto& child : children) { child.update(elapsed_sec); }
     }
 
     void Object::draw(Matrix4 const& parent_transform, OptPtr<ShaderProgram const> const parent_shaders) const
@@ -50,7 +51,7 @@ namespace render
                 glUniformMatrix4fv(shaders->modelId(), 1, GL_TRUE, model_matrix.inner);
                 glDrawArrays(GL_TRIANGLES, 0, mesh->vertexCount());
             }
-            for (auto const& child : children) { child->draw(model_matrix, shaders); }
+            for (auto const& child : children) { child.draw(model_matrix, shaders); }
         }
         if (shaders != parent_shaders && parent_shaders != nullptr) { glUseProgram(parent_shaders->programId()); }
     }
