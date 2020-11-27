@@ -201,3 +201,9 @@ std::ostream& operator<<(std::ostream& os, Vector4 const v)
 {
     return os << '{' << v.x << ", " << v.y << ", " << v.z << ", " << v.w << '}';
 }
+
+std::istream& operator>>(std::istream& is, Vector2& v) { return is >> v.x >> v.y; }
+
+std::istream& operator>>(std::istream& is, Vector3& v) { return is >> v.x >> v.y >> v.z; }
+
+std::istream& operator>>(std::istream& is, Vector4& v) { return is >> v.x >> v.y >> v.z >> v.w; }

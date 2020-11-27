@@ -42,6 +42,7 @@ bool operator==(Vector2 left, Vector2 right);
 bool operator!=(Vector2 left, Vector2 right);
 
 std::ostream& operator<<(std::ostream& os, Vector2 v);
+std::istream& operator>>(std::istream& is, Vector2& v);
 
 struct Vector3
 {
@@ -81,6 +82,7 @@ bool operator==(Vector3 left, Vector3 right);
 bool operator!=(Vector3 left, Vector3 right);
 
 std::ostream& operator<<(std::ostream& os, Vector3 v);
+std::istream& operator>>(std::istream& is, Vector3& v);
 
 struct Vector4
 {
@@ -120,3 +122,4 @@ bool operator==(Vector4 left, Vector4 right);
 bool operator!=(Vector4 left, Vector4 right);
 
 std::ostream& operator<<(std::ostream& os, Vector4 v);
+std::istream& operator>>(std::istream& is, Vector4& v);

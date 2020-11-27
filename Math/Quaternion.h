@@ -34,6 +34,8 @@ struct Quaternion
     float t, x, y, z;
 };
 
+Quaternion operator-(Quaternion qtrn);
+
 Quaternion operator+(Quaternion left, Quaternion right);
 Quaternion operator-(Quaternion left, Quaternion right);
 Quaternion operator*(Quaternion left, Quaternion right);

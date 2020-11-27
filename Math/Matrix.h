@@ -65,7 +65,7 @@ struct Matrix4
 {
     static constexpr auto N = 4;
     static constexpr auto Len = N * N;
-    
+
     static Matrix4 identity();
     static Matrix4 scaling(Vector3 by);
     static Matrix4 translation(Vector3 by);

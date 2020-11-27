@@ -113,20 +113,39 @@ Quaternion Quaternion::cleaned() const { return fromComponents(toComponents().cl
 Quaternion Quaternion::conjugated() const { return {t, -x, -y, -z}; }
 Quaternion Quaternion::inverted() const { return conjugated() * (1.f / quadrance()); }
 
-Quaternion Quaternion::lerp(float const scale, Quaternion const start, Quaternion const end)
+Quaternion Quaternion::lerp(float const scale, Quaternion const start, Quaternion end)
 {
-    auto const angle   = start.toComponents() * end.toComponents();
-    auto const k_start = 1.f - scale;
-    auto const k_end   = angle > 0 ? scale : -scale;
-    return (k_start * start + k_end * end).cleaned().normalized();
+    auto const dot = start.toComponents() * end.toComponents();
+    if (dot < 0) { end = -end; }
+    return (start + scale * (end - start)).cleaned().normalized();
 }
 
-Quaternion Quaternion::slerp(float const scale, Quaternion const start, Quaternion const end)
+Quaternion Quaternion::slerp(float const scale, Quaternion const start, Quaternion end)
 {
-    auto const angle   = start.toComponents() * end.toComponents();
-    auto const k_start = std::sin((1.f - scale) * angle) / std::sin(angle);
-    auto const k_end   = std::sin(scale * angle) / std::sin(angle);
-    return (k_start * start + k_end * end).cleaned().normalized();
+    constexpr auto DotThreshold = 0.9995;
+
+    auto dot = start.toComponents() * end.toComponents();
+    if (dot < 0)
+    {
+        end = -end;
+        dot = -dot;
+    }
+    if (dot > DotThreshold)
+        return (start + scale * (end - start)).cleaned().normalized();
+
+    auto const total = std::acos(dot);
+    auto const angle = total * scale;
+    auto const ratio = std::sin(angle) / std::sin(total);
+
+    auto const start_scale = std::cos(angle) - dot * ratio;
+    auto const end_scale   = ratio;
+
+    return (start_scale * start + end_scale * end).cleaned().normalized();
+}
+
+Quaternion operator-(Quaternion const qtrn)
+{
+    return Quaternion::fromComponents(-qtrn.toComponents());
 }
 
 Quaternion operator+(Quaternion const left, Quaternion const right)
