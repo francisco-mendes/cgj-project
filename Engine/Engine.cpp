@@ -1,17 +1,21 @@
 ﻿#include "Engine.h"
 
 #include "Error.h"
+#include <FreeImage.h>
+#include <string>
 
 namespace engine
 {
-    Engine::Engine(GlfwHandle glfw, render::Scene scene, int width_, int height_)
+    Engine::Engine(GlfwHandle glfw, render::Scene scene, int width, int height)
         : glfw_ {std::move(glfw)},
           scene_ {std::move(scene)}
     {
-        width = width_;
-        height = height_;
-        snapsPath = "C:\\CG_Snaps";
-        snapNum = 1;
+        width_  = width;
+        height_ = height;
+
+        snapshot_dir_ = "./CG_Snaps";
+        snap_num_     = 1;
+
         glfw_.registerEngine(this);
         setupErrorCallback(this);
     }
@@ -24,23 +28,24 @@ namespace engine
     Ptr<GLFWwindow> Engine::window() { return glfw_.window_; }
     render::Scene&  Engine::scene() { return scene_; }
 
-    void engine::Engine::snapshot()
+    void Engine::snapshot()
     {
         // Make the BYTE array, factor of 3 because it's RBG.
-        BYTE* pixels = new BYTE[3 * (width * height)];
+        std::vector<BYTE> pixels;
+        pixels.reserve(3 * (width_ * height_));
 
-        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+        glReadPixels(0, 0, width_, height_, GL_BGR, GL_UNSIGNED_BYTE, pixels.data());
 
         // Convert to FreeImage format & save to file
-        FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, width, height, 3 * width, 24, 0x0000FF, 0xFF0000, 0x00FF00, false);
-        std::string path = std::string(snapsPath) + "\\snapshot" + std::to_string(snapNum) + ".png";
-        char* pathPointer = strcpy(new char[path.length() + 1], path.c_str());
-        FreeImage_Save(FIF_PNG, image, pathPointer, 0);
-        snapNum++;
+        const auto image = FreeImage_ConvertFromRawBits(pixels.data(), width_, height_, 3 * width_, 24, 0, 0, 0, false);
+        const auto filename = "snapshot" + std::to_string(snap_num_) + ".png";
+        const auto path = snapshot_dir_ / filename;
+
+        std::cerr << "path to file " << path << std::endl;
+        std::cerr << FreeImage_SaveU(FIF_PNG, image, path.c_str(), PNG_DEFAULT) << std::endl;
+        snap_num_++;
         // Free resources
         FreeImage_Unload(image);
-        delete[] pixels;
-        free(pathPointer);
     }
 
     void Engine::run()

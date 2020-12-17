@@ -2,8 +2,6 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <FreeImage.h>
-#include <string>
 
 #include "GlfwHandle.h"
 #include "../Render/Scene.h"
@@ -14,12 +12,12 @@ namespace engine
     {
         GlfwHandle    glfw_;
         render::Scene scene_;
-        int width;
-        int height;
-        const char* snapsPath;
-        int snapNum;
+        int width_;
+        int height_;
+        std::filesystem::path snapshot_dir_;
+        int snap_num_;
 
-        Engine(GlfwHandle glfw, render::Scene scene, int width_, int height_);
+        Engine(GlfwHandle glfw, render::Scene scene, int width, int height);
     public:
         static std::unique_ptr<Engine> init(GlfwHandle glfw, render::Scene scene, int width_, int height_);
 
