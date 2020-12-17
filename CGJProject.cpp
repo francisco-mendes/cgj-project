@@ -93,6 +93,8 @@ namespace config::hooks
             case GLFW_KEY_D:
                 engine.scene().root().transform.position.x += 0.5;
                 break;
+            case GLFW_KEY_T:
+                engine.snapshot();
             }
     }
 
@@ -252,11 +254,14 @@ int main()
 {
     using namespace config;
 
+    int width = 640;
+    int height = 480;
+
     auto const settings = Settings {
         Version {4, 3},
         Window {
             u8"Tetris 3D",
-            WindowSize {640, 480},
+            WindowSize {width, height},
             Mode::Windowed,
             VSync::On
         },
@@ -272,7 +277,7 @@ int main()
                 auto glew = engine::GlInit {settings};
 
                 auto scene = render::Scene::setup(std::move(glew));
-                return engine::Engine::init(std::move(glfw), std::move(scene));
+                return engine::Engine::init(std::move(glfw), std::move(scene), width, height);
             }
         );
         engine->run();
