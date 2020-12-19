@@ -1,8 +1,9 @@
 ﻿#include "Scene.h"
 
-
 #include <cassert>
 #include <filesystem>
+
+#include "../Engine/Engine.h"
 
 namespace render
 {
@@ -26,7 +27,7 @@ namespace render
     {
         config::hooks::beforeRender(*this, engine, elapsed_sec);
 
-        camera_.update(elapsed_sec);
+        camera_.update(engine.windowSize(), elapsed_sec);
         root_->update(elapsed_sec);
         root_->draw(Matrix4::identity(), nullptr);
 

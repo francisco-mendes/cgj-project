@@ -11,7 +11,7 @@ namespace engine
     {
         void setupGlew()
         {
-            glewExperimental = GL_TRUE;
+            glewExperimental = true;
             // Allow extension entry points to be loaded even if the extension isn't 
             // present in the driver's extensions string.
             if (auto const result = glewInit(); result != GLEW_OK)

@@ -28,7 +28,7 @@ namespace engine
 {
     GlfwHandle::GlfwHandle(config::Settings const& settings)
     {
-        auto const& [version, window] = settings;
+        auto const& [version, window, _] = settings;
 
         glfwSetErrorCallback(glfwErrorCallback);
         if (!glfwInit())

@@ -47,7 +47,7 @@ namespace render
         void rotate(Controller const& controller);
         void rotate(double frame_delta);
 
-        void update(Vector2 drag_delta, float zoom);
+        void update(callback::WindowSize size, Vector2 drag_delta, float zoom);
 
     private:
         [[nodiscard]] Matrix4  rotationMatrix(Vector2 drag_delta) const;
@@ -67,7 +67,7 @@ namespace render
         void rotateDrag(callback::MousePosition mouse_position);
         void finishDrag();
         void scroll(double by);
-        void update(double frame_delta);
+        void update(callback::WindowSize size, double frame_delta);
 
         [[nodiscard]] Vector2 dragDelta() const;
         [[nodiscard]] bool    isDragging() const;
