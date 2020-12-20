@@ -5,6 +5,8 @@
 
 #include <GL/glew.h>
 
+
+#include "../Callback.h"
 #include "../Config.h"
 
 namespace render
@@ -61,20 +63,20 @@ namespace render
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex_id_, 0);
             }
-            unsigned int rbo;
-            glGenRenderbuffers(1, &rbo);
-            glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+            glGenRenderbuffers(1, &rb_id_);
+            glBindRenderbuffer(GL_RENDERBUFFER, rb_id_);
             {
                 // create a renderbuffer object for depth and stencil attachment (we won't be sampling these)
-
                 glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
                 // use a single renderbuffer object for both a depth AND stencil buffer.
-                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rb_id_);
                 // now actually attach it
                 // now that we actually created the framebuffer and added all attachments we want to check if it is actually complete now
             }
+            #if _DEBUG
             if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-                std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+                std::cerr << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+            #endif
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
@@ -107,5 +109,25 @@ namespace render
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glUseProgram(0);
         glEnable(GL_DEPTH_TEST);
+    }
+
+    void Filter::resize(callback::WindowSize const size)
+    {
+        auto const [width, height] = size;
+        glBindFramebuffer(GL_FRAMEBUFFER, fb_id_);
+        glBindTexture(GL_TEXTURE_2D, tex_id_);
+        {
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex_id_, 0);
+        }
+        glBindRenderbuffer(GL_RENDERBUFFER, rb_id_);
+        {
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+        }
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 }

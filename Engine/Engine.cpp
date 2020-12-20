@@ -25,13 +25,14 @@ namespace engine
         return std::unique_ptr<Engine> {new Engine(std::move(glfw), std::move(scene), settings)};
     }
 
-    Ptr<GLFWwindow> Engine::window() { return glfw_.window_; }
-    render::Scene&  Engine::scene() { return scene_; }
+    Ptr<GLFWwindow>      Engine::window() { return glfw_.window_; }
+    render::Scene&       Engine::scene() { return scene_; }
     callback::WindowSize Engine::windowSize() const { return size_; }
 
     void Engine::resize(callback::WindowSize const size)
     {
         glViewport(0, 0, size.width, size.height);
+        scene_.resizeFilters(size);
         size_ = size;
     }
 
@@ -40,8 +41,7 @@ namespace engine
         auto const [width, height] = size_;
         auto const stride          = width * 3;
 
-        std::vector<BYTE> pixels;
-        pixels.reserve(stride * height);
+        std::vector<BYTE> pixels(stride * height);
 
         glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels.data());
 
@@ -72,18 +72,17 @@ namespace engine
             auto const delta = now - last_time;
             last_time        = now;
 
+            ////////////////////////////////
+            // Render scene
+            // Double Buffers
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            scene_.render(*this, delta);
+            ///////////////////////////////
 
-			////////////////////////////////
-			// Render scene
-			// Double Buffers
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			scene_.render(*this, delta);
-			///////////////////////////////
-
-			glfw_.swapBuffers();
-			glfw_.pollEvents();
-		}
-	}
+            glfw_.swapBuffers();
+            glfw_.pollEvents();
+        }
+    }
 
     void Engine::terminate() { glfw_.closeWindow(); }
 }

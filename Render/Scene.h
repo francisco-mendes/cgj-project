@@ -16,7 +16,7 @@ namespace render
     public:
         struct Builder
         {
-            std::deque<Mesh>          meshes;
+            std::deque<Mesh>     meshes;
             std::deque<Pipeline> shaders;
 
             std::vector<Filter> filters;
@@ -25,11 +25,10 @@ namespace render
             std::unique_ptr<Object>   root;
         };
 
-
     private:
-        std::deque<Mesh>          meshes_;
+        std::deque<Mesh>     meshes_;
         std::deque<Pipeline> shaders_;
-        std::vector<Filter>       filters_;
+        std::vector<Filter>  filters_;
 
         Controller              camera_;
         std::unique_ptr<Object> root_;
@@ -43,6 +42,7 @@ namespace render
 
         void render(engine::Engine&, double elapsed_sec);
         void animate();
+        void resizeFilters(callback::WindowSize size);
 
         [[nodiscard]] Controller const& controller() const;
         [[nodiscard]] Controller&       controller();

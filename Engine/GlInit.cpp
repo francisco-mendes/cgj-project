@@ -44,6 +44,9 @@ namespace engine
         logOpenGlInfo();
         #endif
 
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
         config::hooks::setupOpenGl(settings);
     }
 }

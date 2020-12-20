@@ -186,7 +186,8 @@ namespace config::hooks
                 builder.root = std::make_unique<Object>(plane_mesh, Vector4 {0.8, 0.8, 0.8, 1}, bp_pipeline);
                 auto& plane  = *builder.root.get();
 
-                auto& figure     = plane.children.emplace_back(cel_pipeline);
+                auto& figure = plane.children.emplace_back(cel_pipeline);
+                // auto& figure     = plane.children.emplace_back();
                 figure.transform = {{0.5, 0.5, 0}};
 
                 auto& l     = figure.children.emplace_back();

@@ -40,6 +40,11 @@ namespace render
         root_->animate();
     }
 
+    void Scene::resizeFilters(callback::WindowSize const size)
+    {
+        for (auto& filter : filters_) { filter.resize(size); }
+    }
+
     Controller const& Scene::controller() const { return camera_; }
     Controller&       Scene::controller() { return camera_; }
 
