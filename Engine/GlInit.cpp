@@ -20,8 +20,7 @@ namespace engine
                 message += reinterpret_cast<Ptr<char const>>(glewGetString(result));
                 throw std::runtime_error(message);
             }
-            glGetError();
-            // You might get GL_INVALID_ENUM when loading GLEW.
+            glGetError(); // You might get GL_INVALID_ENUM when loading GLEW. Consume it if it is there.
         }
 
         void logOpenGlInfo()

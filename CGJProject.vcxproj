@@ -117,6 +117,7 @@
     <ClCompile Include="Math\Quaternion.cpp" />
     <ClCompile Include="Math\Vector.cpp" />
     <ClCompile Include="Render\Camera.cpp" />
+    <ClCompile Include="Render\Filter.cpp" />
     <ClCompile Include="Render\Mesh.cpp" />
     <ClCompile Include="Render\Object.cpp" />
     <ClCompile Include="Render\Scene.cpp" />
@@ -129,6 +130,7 @@
     <ClInclude Include="Engine\Error.h" />
     <ClInclude Include="Engine\GlfwHandle.h" />
     <ClInclude Include="Engine\GlInit.h" />
+    <ClInclude Include="Render\Filter.h" />
     <ClInclude Include="Render\Object.h" />
     <ClInclude Include="Render\Transform.h" />
     <ClInclude Include="Utils.h" />

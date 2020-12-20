@@ -1,11 +1,7 @@
 ﻿#pragma once
 
 #include <chrono>
-#include <deque>
 #include <iostream>
-
-template <class Type>
-using Deque = std::pmr::deque<Type>;
 
 template <class T>
 using OptPtr = T*;

@@ -11,6 +11,8 @@
 
 constexpr auto Offset = -3.f;
 
+Ptr<render::Filter> Inverted;
+
 namespace config::hooks
 {
     #pragma region Callbacks
@@ -95,6 +97,13 @@ namespace config::hooks
                 break;
             case GLFW_KEY_T:
                 engine.snapshot();
+                break;
+            case GLFW_KEY_1:
+                engine.scene().active_filter = nullptr;
+                break;
+            case GLFW_KEY_2:
+                engine.scene().active_filter = Inverted;
+                break;
             }
     }
 
@@ -121,7 +130,7 @@ namespace config::hooks
 
     #pragma region Scene
 
-    void setupScene(render::Scene::Builder& builder)
+    void setupScene(render::Scene::Builder& builder, Settings const& settings)
     {
         using namespace std::filesystem;
         using namespace render;
@@ -132,23 +141,33 @@ namespace config::hooks
         path const shaders = "Shaders/";
         path const assets  = "Assets/";
 
-        Ptr<ShaderProgram const> pipeline;
-        Ptr<Mesh const>          plane_mesh;
-        Ptr<Mesh const>          cube_mesh;
+        Ptr<ShaderProgram const> pipeline,   inverted;
+        Ptr<Mesh const>          plane_mesh, cube_mesh;
 
-		logTimeTaken(
-			"Loading Assets",
-			[&]()
-			{
-				pipeline = &builder.shaders.emplace_back(
-					Shader::fromFile(Shader::Vertex, shaders / "vert.glsl"),
-					Shader::fromFile(Shader::Fragment, shaders / "frag.glsl"),
-					Shader::fromFile(Shader::Vertex, shaders / "vertPost.glsl"),
-					Shader::fromFile(Shader::Fragment, shaders / "fragPost.glsl")
-				);
+        logTimeTaken(
+            "Loading Assets",
+            [&]()
+            {
+                pipeline = &builder.shaders.emplace_back(
+                    Shader::fromFile(Shader::Vertex, shaders / "vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, shaders / "frag.glsl")
+                );
+
+                inverted = &builder.shaders.emplace_back(
+                    Shader::fromFile(Shader::Vertex, shaders / "vertPost.glsl"),
+                    Shader::fromFile(Shader::Fragment, shaders / "fragPost.glsl")
+                );
 
                 plane_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Plane.obj"));
                 cube_mesh  = &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Cube.obj"));
+            }
+        );
+
+        logTimeTaken(
+            "Creating Filters",
+            [&]()
+            {
+                Inverted = &builder.filters.emplace_back(inverted, settings.window);
             }
         );
 
@@ -244,10 +263,16 @@ namespace config::hooks
     }
 
     void beforeRender(render::Scene& scene, engine::Engine& engine, double const elapsed_sec)
-    { }
+    {
+        if (scene.active_filter != nullptr)
+            scene.active_filter->bind();
+    }
 
     void afterRender(render::Scene& scene, engine::Engine& engine, double const elapsed_sec)
-    { }
+    {
+        if (scene.active_filter != nullptr)
+            scene.active_filter->finish();
+    }
 
     #pragma endregion Scene
 }
@@ -278,7 +303,7 @@ int main()
                 auto glfw = engine::GlfwHandle {settings};
                 auto glew = engine::GlInit {settings};
 
-                auto scene = render::Scene::setup(std::move(glew));
+                auto scene = render::Scene::setup(std::move(glew), settings);
                 return engine::Engine::init(std::move(glfw), std::move(scene), settings);
             }
         );
