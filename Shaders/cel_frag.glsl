@@ -1,4 +1,4 @@
-﻿#version 330 core
+#version 330 core
 
 in vec3 ex_Position;
 in vec2 ex_Texcoord;
