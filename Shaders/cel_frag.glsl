@@ -7,17 +7,16 @@ in vec3 ex_Normal;
 in vec4 ex_Color;
 out vec4 out_Color;
 
-in vec3 LightPos;
+uniform vec3 Eye;
 
 void main(void)
 {
-	vec3 light_pos = vec3(10, 50,10);
+	vec3 light_pos = vec3(4, 5, 4);
   	vec3 lightDir = -normalize(ex_Position - light_pos);
 	vec3 D = normalize(lightDir);
     vec3 N = normalize(ex_Normal);
 
-    vec3 eye=vec3(0,20,50);
-    eye=normalize(eye);
+    vec3 eye=normalize(Eye);
 
 	float intensity =  dot(D,N);
 	if(intensity>0.95){

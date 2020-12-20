@@ -3,6 +3,7 @@
 in vec3 ex_Position;
 in vec2 ex_Texcoord;
 in vec3 ex_Normal;
+in vec3 in_Eye;
 
 in vec4 ex_Color;
 out vec4 out_Color;
