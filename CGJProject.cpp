@@ -165,7 +165,7 @@ namespace config::hooks
 
                 plane_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Plane.obj"));
                 &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Cube.obj"));
-                piece_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Sphere.obj"));
+                piece_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Sphere16.obj"));
             }
         );
 
@@ -186,7 +186,7 @@ namespace config::hooks
                 builder.root = std::make_unique<Object>(plane_mesh, Vector4 {0.8, 0.8, 0.8, 1}, bp_pipeline);
                 auto& plane  = *builder.root.get();
 
-                auto& figure     = plane.children.emplace_back(bp_pipeline);
+                auto& figure     = plane.children.emplace_back(cel_pipeline);
                 figure.transform = {{0.5, 0.5, 0}};
 
                 auto& l     = figure.children.emplace_back();
