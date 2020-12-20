@@ -16,6 +16,9 @@ namespace engine
         int height_;
         std::filesystem::path snapshot_dir_;
         int snap_num_;
+        int framebuffer_;
+        int textureColorbuffer_;
+        int quadVAO_;
 
         Engine(GlfwHandle glfw, render::Scene scene, int width, int height);
     public:
