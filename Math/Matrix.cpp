@@ -107,17 +107,17 @@ Matrix4 Matrix4::rotation(Vector3 const axis, Radians const angle)
     auto const inv_cos   = 1 - cosine;
 
     return {
-        cosine + pow(x, 2) * inv_cos,
+        cosine + powf(x, 2) * inv_cos,
         x * y * inv_cos - z * sine,
         x * z * inv_cos + y * sine,
         0,
         x * y * inv_cos + z * sine,
-        cosine + pow(y, 2) * inv_cos,
+        cosine + powf(y, 2) * inv_cos,
         y * z * inv_cos - x * sine,
         0,
         x * z * inv_cos - y * sine,
         z * y * inv_cos + x * sine,
-        cosine + pow(z, 2) * inv_cos,
+        cosine + powf(z, 2) * inv_cos,
         0,
         0, 0, 0, 1
     };

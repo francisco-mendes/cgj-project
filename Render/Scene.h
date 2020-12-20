@@ -5,6 +5,7 @@
 #include "Camera.h"
 #include "Mesh.h"
 #include "Object.h"
+#include "Filter.h"
 #include "Shader.h"
 #include "../Engine/GlInit.h"
 
@@ -15,23 +16,30 @@ namespace render
     public:
         struct Builder
         {
-            Deque<Mesh>          meshes;
-            Deque<ShaderProgram> shaders;
+            std::deque<Mesh>          meshes;
+            std::deque<ShaderProgram> shaders;
+
+            std::vector<Filter> filters;
 
             std::optional<Controller> camera;
             std::unique_ptr<Object>   root;
         };
 
+
     private:
-        Deque<Mesh>          meshes_;
-        Deque<ShaderProgram> shaders_;
+        std::deque<Mesh>          meshes_;
+        std::deque<ShaderProgram> shaders_;
+        std::vector<Filter>       filters_;
 
         Controller              camera_;
         std::unique_ptr<Object> root_;
+    public:
+        OptPtr<Filter> active_filter = nullptr;
 
+    private:
         Scene(Builder&& builder);
     public:
-        static Scene setup(engine::GlInit gl_init);
+        static Scene setup(engine::GlInit gl_init, config::Settings const& settings);
 
         void render(engine::Engine&, double elapsed_sec);
         void animate();
@@ -46,7 +54,7 @@ namespace render
 
 namespace config::hooks
 {
-    void setupScene(render::Scene::Builder& builder);
+    void setupScene(render::Scene::Builder& builder, Settings const& settings);
     void beforeRender(render::Scene& scene, engine::Engine& engine, double elapsed_sec);
     void afterRender(render::Scene& scene, engine::Engine& engine, double elapsed_sec);
 }

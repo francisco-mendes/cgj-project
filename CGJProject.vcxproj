@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -107,20 +107,21 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Callback.cpp"/>
+    <ClCompile Include="Callback.cpp" />
     <ClCompile Include="CGJProject.cpp" />
     <ClCompile Include="Engine\Engine.cpp" />
-    <ClCompile Include="Engine\Error.cpp"/>
+    <ClCompile Include="Engine\Error.cpp" />
     <ClCompile Include="Engine\GlfwHandle.cpp" />
     <ClCompile Include="Engine\GlInit.cpp" />
     <ClCompile Include="Math\Matrix.cpp" />
     <ClCompile Include="Math\Quaternion.cpp" />
     <ClCompile Include="Math\Vector.cpp" />
-    <ClCompile Include="Render\Camera.cpp"/>
-    <ClCompile Include="Render\Mesh.cpp"/>
+    <ClCompile Include="Render\Camera.cpp" />
+    <ClCompile Include="Render\Filter.cpp" />
+    <ClCompile Include="Render\Mesh.cpp" />
     <ClCompile Include="Render\Object.cpp" />
-    <ClCompile Include="Render\Scene.cpp"/>
-    <ClCompile Include="Render\Shader.cpp"/>
+    <ClCompile Include="Render\Scene.cpp" />
+    <ClCompile Include="Render\Shader.cpp" />
     <ClCompile Include="Render\Transform.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -129,6 +130,7 @@
     <ClInclude Include="Engine\Error.h" />
     <ClInclude Include="Engine\GlfwHandle.h" />
     <ClInclude Include="Engine\GlInit.h" />
+    <ClInclude Include="Render\Filter.h" />
     <ClInclude Include="Render\Object.h" />
     <ClInclude Include="Render\Transform.h" />
     <ClInclude Include="Utils.h" />

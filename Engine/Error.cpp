@@ -63,7 +63,7 @@ namespace
         std::cerr << "  type:       " << errorType(type) << std::endl;
         std::cerr << "  severity:   " << errorSeverity(severity) << std::endl;
         std::cerr << "  debug call: " << message << std::endl;
-        if (auto const engine = (engine::Engine*) user_param; engine)
+        if (auto const engine = (engine::Engine*) user_param; engine && severity == GL_DEBUG_SEVERITY_HIGH)
         {
             engine->terminate();
         }

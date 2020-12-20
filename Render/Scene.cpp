@@ -1,22 +1,24 @@
 ﻿#include "Scene.h"
 
-
 #include <cassert>
 #include <filesystem>
+
+#include "../Engine/Engine.h"
 
 namespace render
 {
     Scene::Scene(Builder&& builder)
         : meshes_ {std::move(builder.meshes)},
           shaders_ {std::move(builder.shaders)},
+          filters_ {std::move(builder.filters)},
           camera_ {*std::move(builder.camera)},
           root_ {std::move(builder.root)}
     { }
 
-    Scene Scene::setup([[maybe_unused]] engine::GlInit gl_init)
+    Scene Scene::setup([[maybe_unused]] engine::GlInit gl_init, config::Settings const& settings)
     {
         Builder b;
-        config::hooks::setupScene(b);
+        config::hooks::setupScene(b, settings);
         assert(b.root.get() != nullptr);
         assert(b.camera.has_value());
         return b;
@@ -26,7 +28,7 @@ namespace render
     {
         config::hooks::beforeRender(*this, engine, elapsed_sec);
 
-        camera_.update(elapsed_sec);
+        camera_.update(engine.windowSize(), elapsed_sec);
         root_->update(elapsed_sec);
         root_->draw(Matrix4::identity(), nullptr);
 

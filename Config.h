@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include <filesystem>
+
 #include "Utils.h"
 
 namespace config
@@ -29,14 +31,20 @@ namespace config
     struct Window
     {
         Ptr<char const> title;
-        WindowSize  size;
-        Mode        mode;
-        VSync       vsync;
+        WindowSize      size;
+        Mode            mode;
+        VSync           vsync;
+    };
+
+    struct Snapshot
+    {
+        std::filesystem::path dir;
     };
 
     struct Settings
     {
-        Version version;
-        Window  window;
+        Version  version;
+        Window   window;
+        Snapshot snapshot;
     };
 }

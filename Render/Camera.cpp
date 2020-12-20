@@ -10,20 +10,20 @@ namespace render
 
     namespace
     {
-        Matrix4 projection(Camera::Projection const type)
+        Matrix4 projection(Camera::Projection const type, callback::WindowSize const size)
         {
             switch (type)
             {
-                case Camera::Orthogonal:
-                    return Matrix4::orthographic(-2.0f, 2.0f, -2.0f, 2.0f, 0.5f, 100.0f);
-                case Camera::Perspective:
-                    return Matrix4::perspective(30.f, 640.f / 480.f, 0.5f, 100.f);
-                default:
-                    throw std::invalid_argument("Invalid projection type");
+            case Camera::Orthogonal:
+                return Matrix4::orthographic(-2.0f, 2.0f, -2.0f, 2.0f, 0.5f, 100.0f);
+            case Camera::Perspective:
+                return Matrix4::perspective(30.f, size.width / static_cast<float>(size.height), 0.5f, 100.f);
+            default:
+                throw std::invalid_argument("Invalid projection type");
             }
         }
     }
-    
+
     Camera::Camera(float const distance, Vector3 const focus, GLuint const view_id)
         : projection_ {Perspective},
           focus_ {focus},
@@ -51,11 +51,11 @@ namespace render
     {
         if (this != &other)
         {
-            cam_matrices_id_  = std::exchange(other.cam_matrices_id_, 0);
-            projection_ = other.projection_;
-            focus_      = other.focus_;
-            distance_   = other.distance_;
-            rotation_   = other.rotation_;
+            cam_matrices_id_ = std::exchange(other.cam_matrices_id_, 0);
+            projection_      = other.projection_;
+            focus_           = other.focus_;
+            distance_        = other.distance_;
+            rotation_        = other.rotation_;
         }
         return *this;
     }
@@ -73,12 +73,12 @@ namespace render
     {
         switch (projection_)
         {
-            case Orthogonal:
-                projection_ = Perspective;
-                break;
-            case Perspective:
-                projection_ = Orthogonal;
-                break;
+        case Orthogonal:
+            projection_ = Perspective;
+            break;
+        case Perspective:
+            projection_ = Orthogonal;
+            break;
         }
     }
 
@@ -109,11 +109,11 @@ namespace render
         rotation_ = fullRotation(Spin * static_cast<float>(frame_delta));
     }
 
-    void Camera::update(Vector2 const drag_delta, float const zoom)
+    void Camera::update(callback::WindowSize const size, Vector2 const drag_delta, float const zoom)
     {
         distance_ = std::max(0.f, distance_ + zoom);
 
-        auto const projection_matrix = projection(projection_);
+        auto const projection_matrix = projection(projection_, size);
         auto const rotation_matrix   = rotationMatrix(drag_delta);
 
         auto const view_matrix =
@@ -178,7 +178,10 @@ namespace render
 
     void Controller::scroll(double const by) { scroll_ += by; }
 
-    void Controller::update(double const frame_delta) { camera_.update(dragDelta(), scrollDelta(frame_delta)); }
+    void Controller::update(callback::WindowSize const size, double const frame_delta)
+    {
+        camera_.update(size, dragDelta(), scrollDelta(frame_delta));
+    }
 
     Vector2 Controller::dragDelta() const { return drag_now_ - drag_start_; }
     bool    Controller::isDragging() const { return dragging_; }

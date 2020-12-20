@@ -11,7 +11,7 @@ namespace engine
     {
         void setupGlew()
         {
-            glewExperimental = GL_TRUE;
+            glewExperimental = true;
             // Allow extension entry points to be loaded even if the extension isn't 
             // present in the driver's extensions string.
             if (auto const result = glewInit(); result != GLEW_OK)
@@ -20,8 +20,7 @@ namespace engine
                 message += reinterpret_cast<Ptr<char const>>(glewGetString(result));
                 throw std::runtime_error(message);
             }
-            glGetError();
-            // You might get GL_INVALID_ENUM when loading GLEW.
+            glGetError(); // You might get GL_INVALID_ENUM when loading GLEW. Consume it if it is there.
         }
 
         void logOpenGlInfo()

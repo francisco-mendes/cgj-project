@@ -6,43 +6,57 @@
 
 namespace engine
 {
-    Engine::Engine(GlfwHandle glfw, render::Scene scene, int width, int height)
+    Engine::Engine(GlfwHandle glfw, render::Scene scene, config::Settings const& settings)
         : glfw_ {std::move(glfw)},
           scene_ {std::move(scene)}
     {
-        width_  = width;
-        height_ = height;
+        auto const [width, height] = settings.window.size;
 
-        snapshot_dir_ = "./CG_Snaps";
+        size_         = {width, height};
+        snapshot_dir_ = settings.snapshot.dir;
         snap_num_     = 1;
 
         glfw_.registerEngine(this);
         setupErrorCallback(this);
     }
 
-    std::unique_ptr<Engine> Engine::init(GlfwHandle glfw, render::Scene scene, int width_, int height_)
+    std::unique_ptr<Engine> Engine::init(GlfwHandle glfw, render::Scene scene, config::Settings const& settings)
     {
-        return std::unique_ptr<Engine> {new Engine(std::move(glfw), std::move(scene), width_, height_)};
+        return std::unique_ptr<Engine> {new Engine(std::move(glfw), std::move(scene), settings)};
     }
 
     Ptr<GLFWwindow> Engine::window() { return glfw_.window_; }
     render::Scene&  Engine::scene() { return scene_; }
+    callback::WindowSize Engine::windowSize() const { return size_; }
+
+    void Engine::resize(callback::WindowSize const size)
+    {
+        glViewport(0, 0, size.width, size.height);
+        size_ = size;
+    }
 
     void Engine::snapshot()
     {
-        // Make the BYTE array, factor of 3 because it's RBG.
-        std::vector<BYTE> pixels;
-        pixels.reserve(3 * (width_ * height_));
+        auto const [width, height] = size_;
+        auto const stride          = width * 3;
 
-        glReadPixels(0, 0, width_, height_, GL_BGR, GL_UNSIGNED_BYTE, pixels.data());
+        std::vector<BYTE> pixels;
+        pixels.reserve(stride * height);
+
+        glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels.data());
 
         // Convert to FreeImage format & save to file
-        const auto image = FreeImage_ConvertFromRawBits(pixels.data(), width_, height_, 3 * width_, 24, 0, 0, 0, false);
+        const auto image    = FreeImage_ConvertFromRawBits(pixels.data(), width, height, stride, 24, 0, 0, 0, false);
         const auto filename = "snapshot" + std::to_string(snap_num_) + ".png";
-        const auto path = snapshot_dir_ / filename;
+        const auto path     = snapshot_dir_ / filename;
 
-        std::cerr << "path to file " << path << std::endl;
-        std::cerr << FreeImage_SaveU(FIF_PNG, image, path.c_str(), PNG_DEFAULT) << std::endl;
+        #ifdef _DEBUG
+        std::cerr << "saving snapshot to " << path << std::endl;
+        auto const res = FreeImage_SaveU(FIF_PNG, image, path.c_str(), PNG_DEFAULT);
+        std::cerr << (res ? "succeeded" : "failed") << std::endl;
+        #else
+        FreeImage_SaveU(FIF_PNG, image, path.c_str(), PNG_DEFAULT);
+        #endif
         snap_num_++;
         // Free resources
         FreeImage_Unload(image);
@@ -58,14 +72,18 @@ namespace engine
             auto const delta = now - last_time;
             last_time        = now;
 
-            // Double Buffers
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            scene_.render(*this, delta);
 
-            glfw_.swapBuffers();
-            glfw_.pollEvents();
-        }
-    }
+			////////////////////////////////
+			// Render scene
+			// Double Buffers
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			scene_.render(*this, delta);
+			///////////////////////////////
+
+			glfw_.swapBuffers();
+			glfw_.pollEvents();
+		}
+	}
 
     void Engine::terminate() { glfw_.closeWindow(); }
 }

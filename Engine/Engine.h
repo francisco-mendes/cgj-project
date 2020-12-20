@@ -10,24 +10,27 @@ namespace engine
 {
     class Engine
     {
-        GlfwHandle    glfw_;
-        render::Scene scene_;
-        int width_;
-        int height_;
-        std::filesystem::path snapshot_dir_;
-        int snap_num_;
+        GlfwHandle           glfw_;
+        render::Scene        scene_;
+        callback::WindowSize size_;
 
-        Engine(GlfwHandle glfw, render::Scene scene, int width, int height);
+        std::filesystem::path snapshot_dir_;
+        int                   snap_num_;
+
+        Engine(GlfwHandle glfw, render::Scene scene, config::Settings const& settings);
     public:
-        static std::unique_ptr<Engine> init(GlfwHandle glfw, render::Scene scene, int width_, int height_);
+        static std::unique_ptr<Engine> init(GlfwHandle glfw, render::Scene scene, config::Settings const& settings);
 
         Engine(Engine const&)            = delete;
         Engine& operator=(Engine const&) = delete;
         Engine(Engine&&)                 = delete;
         Engine& operator=(Engine&&)      = delete;
 
-        [[nodiscard]] Ptr<GLFWwindow> window();
-        [[nodiscard]] render::Scene&  scene();
+        [[nodiscard]] Ptr<GLFWwindow>      window();
+        [[nodiscard]] render::Scene&       scene();
+        [[nodiscard]] callback::WindowSize windowSize() const;
+
+        void resize(callback::WindowSize size);
 
         void snapshot();
         void run();
