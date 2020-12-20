@@ -17,7 +17,7 @@ namespace render
         struct Builder
         {
             std::deque<Mesh>          meshes;
-            std::deque<ShaderProgram> shaders;
+            std::deque<Pipeline> shaders;
 
             std::vector<Filter> filters;
 
@@ -28,7 +28,7 @@ namespace render
 
     private:
         std::deque<Mesh>          meshes_;
-        std::deque<ShaderProgram> shaders_;
+        std::deque<Pipeline> shaders_;
         std::vector<Filter>       filters_;
 
         Controller              camera_;
@@ -44,8 +44,8 @@ namespace render
         void render(engine::Engine&, double elapsed_sec);
         void animate();
 
-        [[nodiscard]] Controller const& camera() const;
-        [[nodiscard]] Controller&       camera();
+        [[nodiscard]] Controller const& controller() const;
+        [[nodiscard]] Controller&       controller();
 
         [[nodiscard]] Object const& root() const;
         [[nodiscard]] Object&       root();

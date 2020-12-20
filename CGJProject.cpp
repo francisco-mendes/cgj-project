@@ -32,7 +32,7 @@ namespace config::hooks
         {
             double x_pos, y_pos;
             glfwGetCursorPos(engine.window(), &x_pos, &y_pos);
-            engine.scene().camera().startDrag({x_pos, y_pos});
+            engine.scene().controller().startDrag({x_pos, y_pos});
 
             #if _DEBUG
             std::cerr << "start pos: " << x_pos << ", " << y_pos << std::endl;
@@ -40,7 +40,7 @@ namespace config::hooks
         }
         else if (button.action == GLFW_RELEASE)
         {
-            engine.scene().camera().finishDrag();
+            engine.scene().controller().finishDrag();
         }
     }
 
@@ -53,7 +53,7 @@ namespace config::hooks
             std::cerr << "position: " << position.x << ", " << position.y << std::endl;
             #endif
 
-            engine.scene().camera().rotateDrag(position);
+            engine.scene().controller().rotateDrag(position);
         }
     }
 
@@ -63,7 +63,7 @@ namespace config::hooks
         std::cerr << "zoom: " << scroll << std::endl;
         #endif
 
-        engine.scene().camera().scroll(scroll);
+        engine.scene().controller().scroll(scroll);
     }
 
     void onKeyboardButton(engine::Engine& engine, callback::KeyboardButton const button)
@@ -75,10 +75,10 @@ namespace config::hooks
                 engine.terminate();
                 break;
             case GLFW_KEY_P:
-                engine.scene().camera().camera().swapProjection();
+                engine.scene().controller().camera().swapProjection();
                 break;
             case GLFW_KEY_G:
-                engine.scene().camera().camera().swapRotationMode();
+                engine.scene().controller().camera().swapRotationMode();
                 break;
             case GLFW_KEY_M:
                 engine.scene().animate();
@@ -141,25 +141,31 @@ namespace config::hooks
         path const shaders = "Shaders/";
         path const assets  = "Assets/";
 
-        Ptr<ShaderProgram const> pipeline,   inverted;
-        Ptr<Mesh const>          plane_mesh, cube_mesh;
+        Ptr<Pipeline const> bp_pipeline, cel_pipeline, invert_pipeline;
+        Ptr<Mesh const>     plane_mesh,  piece_mesh;
 
         logTimeTaken(
             "Loading Assets",
             [&]()
             {
-                pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "frag.glsl")
+                bp_pipeline = &builder.shaders.emplace_back(
+                    Shader::fromFile(Shader::Vertex, shaders / "bp_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, shaders / "bp_frag.glsl")
                 );
 
-                inverted = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "vertPost.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "fragPost.glsl")
+                cel_pipeline = &builder.shaders.emplace_back(
+                    Shader::fromFile(Shader::Vertex, shaders / "cel_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, shaders / "cel_frag.glsl")
+                );
+
+                invert_pipeline = &builder.shaders.emplace_back(
+                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "invert_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "invert_frag.glsl")
                 );
 
                 plane_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Plane.obj"));
-                cube_mesh  = &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Cube.obj"));
+                &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Cube.obj"));
+                piece_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Sphere.obj"));
             }
         );
 
@@ -167,7 +173,7 @@ namespace config::hooks
             "Creating Filters",
             [&]()
             {
-                Inverted = &builder.filters.emplace_back(inverted, settings.window);
+                Inverted = &builder.filters.emplace_back(invert_pipeline, settings.window);
             }
         );
 
@@ -175,12 +181,12 @@ namespace config::hooks
             "Setting up scene",
             [&]()
             {
-                builder.camera = Camera(20, Vector3::filled(0), ShaderProgram::Camera);
+                builder.camera = Camera(20, Vector3::filled(0), Pipeline::Camera);
 
-                builder.root = std::make_unique<Object>(plane_mesh, Vector4 {0.8, 0.8, 0.8, 1}, pipeline);
+                builder.root = std::make_unique<Object>(plane_mesh, Vector4 {0.8, 0.8, 0.8, 1}, bp_pipeline);
                 auto& plane  = *builder.root.get();
 
-                auto& figure     = plane.children.emplace_back();
+                auto& figure     = plane.children.emplace_back(bp_pipeline);
                 figure.transform = {{0.5, 0.5, 0}};
 
                 auto& l     = figure.children.emplace_back();
@@ -191,10 +197,10 @@ namespace config::hooks
                 {
                     auto const color = Vector4 {0.7, 0, 0, 1};
 
-                    auto& c1 = l.children.emplace_back(cube_mesh, color);
-                    auto& c2 = l.children.emplace_back(cube_mesh, color);
-                    auto& c3 = l.children.emplace_back(cube_mesh, color);
-                    auto& c4 = l.children.emplace_back(cube_mesh, color);
+                    auto& c1 = l.children.emplace_back(piece_mesh, color);
+                    auto& c2 = l.children.emplace_back(piece_mesh, color);
+                    auto& c3 = l.children.emplace_back(piece_mesh, color);
+                    auto& c4 = l.children.emplace_back(piece_mesh, color);
 
                     c1.transform.position = {0, 0, 0};
                     c2.transform.position = {1, 0, 0};
@@ -222,10 +228,10 @@ namespace config::hooks
 
                     for (auto [t, color] : std::array {std::pair {&t1, color1}, std::pair {&t2, color2}})
                     {
-                        auto& c1 = t->children.emplace_back(cube_mesh, color);
-                        auto& c2 = t->children.emplace_back(cube_mesh, color);
-                        auto& c3 = t->children.emplace_back(cube_mesh, color);
-                        auto& c4 = t->children.emplace_back(cube_mesh, color);
+                        auto& c1 = t->children.emplace_back(piece_mesh, color);
+                        auto& c2 = t->children.emplace_back(piece_mesh, color);
+                        auto& c3 = t->children.emplace_back(piece_mesh, color);
+                        auto& c4 = t->children.emplace_back(piece_mesh, color);
 
                         c1.transform.position = {0, 0, 0};
                         c2.transform.position = {-1, 0, 0};
@@ -245,10 +251,10 @@ namespace config::hooks
                 {
                     constexpr auto color = Vector4 {0.7, 0, 0.7, 1};
 
-                    auto& c1 = line.children.emplace_back(cube_mesh, color);
-                    auto& c2 = line.children.emplace_back(cube_mesh, color);
-                    auto& c3 = line.children.emplace_back(cube_mesh, color);
-                    auto& c4 = line.children.emplace_back(cube_mesh, color);
+                    auto& c1 = line.children.emplace_back(piece_mesh, color);
+                    auto& c2 = line.children.emplace_back(piece_mesh, color);
+                    auto& c3 = line.children.emplace_back(piece_mesh, color);
+                    auto& c4 = line.children.emplace_back(piece_mesh, color);
 
                     c1.transform.position = {0, 0, 0};
                     c2.transform.position = {0, 1, 0};

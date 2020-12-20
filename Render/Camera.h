@@ -30,6 +30,8 @@ namespace render
         float      distance_;
         Rotation   rotation_;
 
+        Vector3 position_;
+
     public:
         Camera(float distance, Vector3 focus, GLuint view_id);
 
@@ -40,7 +42,7 @@ namespace render
         Camera& operator=(Camera&&) noexcept;
 
         ~Camera();
-        
+
         void swapProjection();
         void swapRotationMode();
 
@@ -49,6 +51,8 @@ namespace render
 
         void update(callback::WindowSize size, Vector2 drag_delta, float zoom);
 
+
+        [[nodiscard]] Vector3 position() const { return position_; }
     private:
         [[nodiscard]] Matrix4  rotationMatrix(Vector2 drag_delta) const;
         [[nodiscard]] Rotation fullRotation(Vector2 drag_delta) const;
@@ -72,6 +76,8 @@ namespace render
         [[nodiscard]] Vector2 dragDelta() const;
         [[nodiscard]] bool    isDragging() const;
         [[nodiscard]] float   scrollDelta(double frame_delta);
-        [[nodiscard]] Camera& camera();
+
+        [[nodiscard]] Camera&       camera();
+        [[nodiscard]] Camera const& camera() const;
     };
 }

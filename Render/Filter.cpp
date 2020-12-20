@@ -7,15 +7,9 @@
 
 #include "../Config.h"
 
-namespace
-{
-    constexpr auto Vertices = 0;
-    constexpr auto Textures = 1;
-}
-
 namespace render
 {
-    Filter::Filter(Ptr<ShaderProgram const> const pipeline, config::Window const& window)
+    Filter::Filter(Ptr<Pipeline const> const pipeline, config::Window const& window)
         : pipeline_ {pipeline}
     {
         std::array const quad_vertices {
@@ -40,11 +34,11 @@ namespace render
             glBindBuffer(GL_ARRAY_BUFFER, quad_buffer_);
             {
                 glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
-                glEnableVertexAttribArray(Vertices);
-                glVertexAttribPointer(Vertices, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
-                glEnableVertexAttribArray(Textures);
+                glEnableVertexAttribArray(Pipeline::Position);
+                glVertexAttribPointer(Pipeline::Position, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), nullptr);
+                glEnableVertexAttribArray(Pipeline::Texture);
                 glVertexAttribPointer(
-                    Textures,
+                    Pipeline::Texture,
                     2,
                     GL_FLOAT,
                     GL_FALSE,

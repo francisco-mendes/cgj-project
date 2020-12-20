@@ -125,6 +125,8 @@ namespace render
             glBufferSubData(GL_UNIFORM_BUFFER, sizeof(Matrix4), sizeof(Matrix4), projection_matrix.inner);
         }
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        position_ = rotation_matrix * Vector3 {0, 0, distance_};
     }
 
     Matrix4 Camera::rotationMatrix(Vector2 const drag_delta) const
@@ -198,5 +200,6 @@ namespace render
         return static_cast<float>(-change * Scale);
     }
 
-    Camera& Controller::camera() { return camera_; }
+    Camera&       Controller::camera() { return camera_; }
+    Camera const& Controller::camera() const { return camera_; }
 }

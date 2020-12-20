@@ -111,23 +111,26 @@ namespace render
     GLuint       Shader::id() const { return shader_id_; }
 
 
-    ShaderProgram::ShaderProgram(ShaderProgram&& other) noexcept
+    Pipeline::Pipeline(Pipeline&& other) noexcept
         : program_id_ {std::exchange(other.program_id_, 0)},
           model_id_ {std::exchange(other.model_id_, 0)},
-          color_id_ {std::exchange(other.color_id_, 0)} {}
+          color_id_ {std::exchange(other.color_id_, 0)},
+          eye_id_ {std::exchange(other.eye_id_, 0)}
+    {}
 
-    ShaderProgram& ShaderProgram::operator=(ShaderProgram&& other) noexcept
+    Pipeline& Pipeline::operator=(Pipeline&& other) noexcept
     {
         if (this != &other)
         {
             program_id_ = std::exchange(other.program_id_, 0);
             model_id_   = std::exchange(other.model_id_, 0);
             color_id_   = std::exchange(other.color_id_, 0);
+            eye_id_     = std::exchange(other.eye_id_, 0);
         }
         return *this;
     }
 
-    ShaderProgram::~ShaderProgram()
+    Pipeline::~Pipeline()
     {
         if (program_id_ != 0)
         {
@@ -135,7 +138,7 @@ namespace render
         }
     }
 
-    ShaderProgram::ShaderProgram(std::initializer_list<Shader> shaders)
+    Pipeline::Pipeline(std::initializer_list<Shader> shaders)
         : program_id_ {glCreateProgram()}
     {
         for (auto const& shader : shaders)
@@ -144,13 +147,15 @@ namespace render
         }
 
         glBindAttribLocation(program_id_, Position, "in_Position");
-        glBindAttribLocation(program_id_, Colors, "in_Color");
+        glBindAttribLocation(program_id_, Texture, "in_Texcoord");
+        glBindAttribLocation(program_id_, Normal, "in_Normal");
 
         glLinkProgram(program_id_);
         checkLinkage(program_id_);
 
         model_id_ = glGetUniformLocation(program_id_, "ModelMatrix");
         color_id_ = glGetUniformLocation(program_id_, "Color");
+        eye_id_   = glGetUniformLocation(program_id_, "Eye");
 
         auto const camera_id = glGetUniformBlockIndex(program_id_, "CameraMatrices");
         glUniformBlockBinding(program_id_, camera_id, Camera);
@@ -161,14 +166,15 @@ namespace render
         }
     }
 
-    GLuint ShaderProgram::programId() const { return program_id_; }
-    GLuint ShaderProgram::modelId() const { return model_id_; }
-    GLuint ShaderProgram::colorId() const { return color_id_; }
+    GLuint Pipeline::programId() const { return program_id_; }
+    GLuint Pipeline::modelId() const { return model_id_; }
+    GLuint Pipeline::colorId() const { return color_id_; }
+    GLuint Pipeline::eyeId() const { return eye_id_; }
 }
 
-bool operator==(render::ShaderProgram const& lhs, render::ShaderProgram const& rhs)
+bool operator==(render::Pipeline const& lhs, render::Pipeline const& rhs)
 {
     return lhs.programId() == rhs.programId();
 }
 
-bool operator!=(render::ShaderProgram const& lhs, render::ShaderProgram const& rhs) { return !(lhs == rhs); }
+bool operator!=(render::Pipeline const& lhs, render::Pipeline const& rhs) { return !(lhs == rhs); }

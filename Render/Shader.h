@@ -42,28 +42,29 @@ namespace render
         [[nodiscard]] GLuint id() const;
     };
 
-    class ShaderProgram
+    class Pipeline
     {
     public:
         constexpr static GLuint Position = 0;
-        constexpr static GLuint Colors   = 1;
+        constexpr static GLuint Texture  = 1;
+        constexpr static GLuint Normal   = 2;
 
         constexpr static GLuint Camera = 0;
     private:
-        GLuint program_id_, model_id_, color_id_;
+        GLuint program_id_, model_id_, color_id_, eye_id_;
     public:
-        ShaderProgram(ShaderProgram const&)            = delete;
-        ShaderProgram& operator=(ShaderProgram const&) = delete;
+        Pipeline(Pipeline const&)            = delete;
+        Pipeline& operator=(Pipeline const&) = delete;
 
-        ShaderProgram(ShaderProgram&& other) noexcept;
-        ShaderProgram& operator=(ShaderProgram&&) noexcept;
+        Pipeline(Pipeline&& other) noexcept;
+        Pipeline& operator=(Pipeline&&) noexcept;
 
-        ShaderProgram(std::initializer_list<Shader> shaders);
+        Pipeline(std::initializer_list<Shader> shaders);
 
-        ~ShaderProgram();
+        ~Pipeline();
 
         template <class... Shaders>
-        explicit ShaderProgram(Shaders ...shaders) : ShaderProgram({std::move(shaders) ...})
+        explicit Pipeline(Shaders ...shaders) : Pipeline({std::move(shaders) ...})
         {
             static_assert((std::is_same_v<Shader, Shaders> && ...));
         }
@@ -71,8 +72,9 @@ namespace render
         [[nodiscard]] GLuint programId() const;
         [[nodiscard]] GLuint modelId() const;
         [[nodiscard]] GLuint colorId() const;
+        [[nodiscard]] GLuint eyeId() const;
     };
 }
 
-bool operator==(render::ShaderProgram const& lhs, render::ShaderProgram const& rhs);
-bool operator!=(render::ShaderProgram const& lhs, render::ShaderProgram const& rhs);
+bool operator==(render::Pipeline const& lhs, render::Pipeline const& rhs);
+bool operator!=(render::Pipeline const& lhs, render::Pipeline const& rhs);

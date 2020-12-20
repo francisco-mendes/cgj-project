@@ -30,7 +30,7 @@ namespace render
 
         camera_.update(engine.windowSize(), elapsed_sec);
         root_->update(elapsed_sec);
-        root_->draw(Matrix4::identity(), nullptr);
+        root_->draw(Matrix4::identity(), nullptr, *this);
 
         config::hooks::afterRender(*this, engine, elapsed_sec);
     }
@@ -40,8 +40,8 @@ namespace render
         root_->animate();
     }
 
-    Controller const& Scene::camera() const { return camera_; }
-    Controller&       Scene::camera() { return camera_; }
+    Controller const& Scene::controller() const { return camera_; }
+    Controller&       Scene::controller() { return camera_; }
 
     Object const& Scene::root() const { return *root_; }
     Object&       Scene::root() { return *root_; }

@@ -6,14 +6,12 @@
 #include <sstream>
 #include <string>
 
+#include "Shader.h"
+
 namespace render
 {
     namespace
     {
-        constexpr auto Vertices = 0;
-        constexpr auto Textures = 1;
-        constexpr auto Normals  = 2;
-
         void parseLine(std::istringstream& line, MeshLoader& mesh)
         {
             std::string s;
@@ -70,24 +68,24 @@ namespace render
                 glGenBuffers(1, &vbo_vt);
                 glBindBuffer(GL_ARRAY_BUFFER, vbo_vt);
                 glBufferData(GL_ARRAY_BUFFER, vs.size() * sizeof(Vector3), vs.data(), GL_STATIC_DRAW);
-                glEnableVertexAttribArray(Vertices);
-                glVertexAttribPointer(Vertices, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), nullptr);
+                glEnableVertexAttribArray(Pipeline::Position);
+                glVertexAttribPointer(Pipeline::Position, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), nullptr);
 
                 if (mesh.has_textures)
                 {
                     glGenBuffers(1, &vbo_tx);
                     glBindBuffer(GL_ARRAY_BUFFER, vbo_tx);
                     glBufferData(GL_ARRAY_BUFFER, ts.size() * sizeof(Vector2), ts.data(), GL_STATIC_DRAW);
-                    glEnableVertexAttribArray(Textures);
-                    glVertexAttribPointer(Textures, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), nullptr);
+                    glEnableVertexAttribArray(Pipeline::Texture);
+                    glVertexAttribPointer(Pipeline::Texture, 2, GL_FLOAT, GL_FALSE, sizeof(Vector2), nullptr);
                 }
                 if (mesh.has_normals)
                 {
                     glGenBuffers(1, &vbo_n);
                     glBindBuffer(GL_ARRAY_BUFFER, vbo_n);
                     glBufferData(GL_ARRAY_BUFFER, ns.size() * sizeof(Vector3), ns.data(), GL_STATIC_DRAW);
-                    glEnableVertexAttribArray(Normals);
-                    glVertexAttribPointer(Normals, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), nullptr);
+                    glEnableVertexAttribArray(Pipeline::Normal);
+                    glVertexAttribPointer(Pipeline::Normal, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), nullptr);
                 }
             }
             glBindVertexArray(0);

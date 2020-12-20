@@ -11,10 +11,10 @@ namespace render
         GLuint tex_id_;
         GLuint quad_id_, quad_buffer_;
 
-        Ptr<ShaderProgram const> pipeline_;
+        Ptr<Pipeline const> pipeline_;
 
     public:
-        Filter(Ptr<ShaderProgram const>  pipeline, config::Window const& window);
+        Filter(Ptr<Pipeline const> pipeline, config::Window const& window);
 
         void bind();
         void finish();
