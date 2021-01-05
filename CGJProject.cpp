@@ -11,8 +11,8 @@
 
 constexpr auto Offset = -3.f;
 
-Ptr<render::Filter> Inverted, Grayscale, Sharpen, Blur, Edge, 
-Sobel, Sepia, Red, Blue, Green, HighContrast, HighSaturation, 
+Ptr<render::Filter> Inverted, Grayscale, Sharpen, Blur, Edge,
+Sobel, Sepia, Red, Blue, Green, HighContrast, HighSaturation,
 Emboss, Sketch, OilPainting, Swirl;
 
 namespace config::hooks
@@ -236,27 +236,27 @@ namespace config::hooks
 					Shader::fromFile(Shader::Vertex, shaders / "Filters" / "sobel_vert.glsl"),
 					Shader::fromFile(Shader::Fragment, shaders / "Filters" / "sobel_frag.glsl")
 				);
-				
+
 				sepia_pipeline = &builder.shaders.emplace_back(
 					Shader::fromFile(Shader::Vertex, shaders / "Filters" / "sepia_vert.glsl"),
 					Shader::fromFile(Shader::Fragment, shaders / "Filters" / "sepia_frag.glsl")
 				);
-				
+
 				red_pipeline = &builder.shaders.emplace_back(
 					Shader::fromFile(Shader::Vertex, shaders / "Filters" / "red_vert.glsl"),
 					Shader::fromFile(Shader::Fragment, shaders / "Filters" / "red_frag.glsl")
 				);
-				
+
 				green_pipeline = &builder.shaders.emplace_back(
 					Shader::fromFile(Shader::Vertex, shaders / "Filters" / "green_vert.glsl"),
 					Shader::fromFile(Shader::Fragment, shaders / "Filters" / "green_frag.glsl")
 				);
-				
+
 				blue_pipeline = &builder.shaders.emplace_back(
 					Shader::fromFile(Shader::Vertex, shaders / "Filters" / "blue_vert.glsl"),
 					Shader::fromFile(Shader::Fragment, shaders / "Filters" / "blue_frag.glsl")
 				);
-				
+
 				highContrast_pipeline = &builder.shaders.emplace_back(
 					Shader::fromFile(Shader::Vertex, shaders / "Filters" / "highContrast_vert.glsl"),
 					Shader::fromFile(Shader::Fragment, shaders / "Filters" / "highContrast_frag.glsl")
@@ -297,23 +297,38 @@ namespace config::hooks
 			"Creating Filters",
 			[&]()
 			{
-				
+				builder.filters.reserve(16);
 				Inverted = &builder.filters.emplace_back(invert_pipeline, settings.window);
+				builder.filters.reserve(16);
 				Grayscale = &builder.filters.emplace_back(grayscale_pipeline, settings.window);
+				builder.filters.reserve(16);
 				Sharpen = &builder.filters.emplace_back(sharpen_pipeline, settings.window);
+				builder.filters.reserve(16);
 				Blur = &builder.filters.emplace_back(blur_pipeline, settings.window);
+				builder.filters.reserve(16);
 				Edge = &builder.filters.emplace_back(edge_pipeline, settings.window);
+				builder.filters.reserve(16);
 				Sobel = &builder.filters.emplace_back(sobel_pipeline, settings.window);
+				builder.filters.reserve(16);
 				Sepia = &builder.filters.emplace_back(sepia_pipeline, settings.window);
+				builder.filters.reserve(16);
 				Red = &builder.filters.emplace_back(red_pipeline, settings.window);
+				builder.filters.reserve(16);
 				Green = &builder.filters.emplace_back(green_pipeline, settings.window);
+				builder.filters.reserve(16);
 				Blue = &builder.filters.emplace_back(blue_pipeline, settings.window);
+				builder.filters.reserve(16);
 				HighContrast = &builder.filters.emplace_back(highContrast_pipeline, settings.window);
+				builder.filters.reserve(16);
 				HighSaturation = &builder.filters.emplace_back(highSaturation_pipeline, settings.window);
+				builder.filters.reserve(16);
 				Emboss = &builder.filters.emplace_back(emboss_pipeline, settings.window);
+				builder.filters.reserve(16);
 				Sketch = &builder.filters.emplace_back(sketch_pipeline, settings.window);
+				builder.filters.reserve(16);
 				OilPainting = &builder.filters.emplace_back(oilPainting_pipeline, settings.window);
-				Swirl = &builder.filters.emplace_back(swirl_pipeline, settings.window);                
+				builder.filters.reserve(16);
+				Swirl = &builder.filters.emplace_back(swirl_pipeline, settings.window);
 			}
 		);
 
