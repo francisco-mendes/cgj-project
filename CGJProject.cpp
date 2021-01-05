@@ -12,7 +12,7 @@
 constexpr auto Offset = -3.f;
 
 Ptr<render::Filter> Inverted, Grayscale, Sharpen, Blur, Edge,
-Sobel, Sepia, Red, Blue, Green, HighContrast, HighSaturation,
+Sobel, Sepia, Red, Blue, Green, HighSaturation,
 Emboss, Sketch, OilPainting, Swirl;
 
 namespace config::hooks
@@ -134,21 +134,18 @@ namespace config::hooks
 				engine.scene().active_filter = Sobel;
 				break;
 			case GLFW_KEY_F1:
-				engine.scene().active_filter = HighContrast;
-				break;
-			case GLFW_KEY_F2:
 				engine.scene().active_filter = HighSaturation;
 				break;
-			case GLFW_KEY_F3:
+			case GLFW_KEY_F2:
 				engine.scene().active_filter = Blur;
 				break;
-			case GLFW_KEY_F4:
+			case GLFW_KEY_F3:
 				engine.scene().active_filter = Sketch;
 				break;
-			case GLFW_KEY_F5:
+			case GLFW_KEY_F4:
 				engine.scene().active_filter = OilPainting;
 				break;
-			case GLFW_KEY_F6:
+			case GLFW_KEY_F5:
 				engine.scene().active_filter = Swirl;
 				break;
 			}
@@ -189,7 +186,7 @@ namespace config::hooks
 		path const assets = "Assets/";
 
 		Ptr<Pipeline const> bp_pipeline, cel_pipeline, invert_pipeline, grayscale_pipeline, sharpen_pipeline, blur_pipeline, edge_pipeline,
-			sobel_pipeline, sepia_pipeline, red_pipeline, green_pipeline, blue_pipeline, highContrast_pipeline, highSaturation_pipeline,
+			sobel_pipeline, sepia_pipeline, red_pipeline, green_pipeline, blue_pipeline, highSaturation_pipeline,
 			emboss_pipeline, sketch_pipeline, oilPainting_pipeline, swirl_pipeline;
 		Ptr<Mesh const>     plane_mesh, piece_mesh;
 
@@ -257,11 +254,6 @@ namespace config::hooks
 					Shader::fromFile(Shader::Fragment, shaders / "Filters" / "blue_frag.glsl")
 				);
 
-				highContrast_pipeline = &builder.shaders.emplace_back(
-					Shader::fromFile(Shader::Vertex, shaders / "Filters" / "highContrast_vert.glsl"),
-					Shader::fromFile(Shader::Fragment, shaders / "Filters" / "highContrast_frag.glsl")
-				);
-
 				highSaturation_pipeline = &builder.shaders.emplace_back(
 					Shader::fromFile(Shader::Vertex, shaders / "Filters" / "highSaturation_vert.glsl"),
 					Shader::fromFile(Shader::Fragment, shaders / "Filters" / "highSaturation_frag.glsl")
@@ -317,8 +309,6 @@ namespace config::hooks
 				Green = &builder.filters.emplace_back(green_pipeline, settings.window);
 				builder.filters.reserve(16);
 				Blue = &builder.filters.emplace_back(blue_pipeline, settings.window);
-				builder.filters.reserve(16);
-				HighContrast = &builder.filters.emplace_back(highContrast_pipeline, settings.window);
 				builder.filters.reserve(16);
 				HighSaturation = &builder.filters.emplace_back(highSaturation_pipeline, settings.window);
 				builder.filters.reserve(16);
