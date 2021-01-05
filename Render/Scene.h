@@ -18,8 +18,7 @@ namespace render
         {
             std::deque<Mesh>     meshes;
             std::deque<Pipeline> shaders;
-
-            std::vector<Filter> filters;
+            std::deque<Filter>   filters;
 
             std::optional<Controller> camera;
             std::unique_ptr<Object>   root;
@@ -28,7 +27,7 @@ namespace render
     private:
         std::deque<Mesh>     meshes_;
         std::deque<Pipeline> shaders_;
-        std::vector<Filter>  filters_;
+        std::deque<Filter>   filters_;
 
         Controller              camera_;
         std::unique_ptr<Object> root_;
