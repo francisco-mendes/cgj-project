@@ -10,27 +10,21 @@
 
 namespace render
 {
-    class Controller;
+    class CameraController;
 
     class Camera
     {
     public:
         using Rotation = std::variant<Matrix4, Quaternion>;
 
-        enum Projection: bool
-        {
-            Orthogonal,
-            Perspective
-        };
-
     private:
-        GLuint     cam_matrices_id_;
-        Projection projection_;
-        Vector3    focus_;
-        float      distance_;
-        Rotation   rotation_;
+        GLuint cam_matrices_id_;
 
-        Vector3 position_;
+        Vector3  focus_;
+        float    distance_;
+        Rotation rotation_;
+
+        Vector3 position_ = {};
 
     public:
         Camera(float distance, Vector3 focus, GLuint view_id);
@@ -43,10 +37,9 @@ namespace render
 
         ~Camera();
 
-        void swapProjection();
         void swapRotationMode();
 
-        void rotate(Controller const& controller);
+        void rotate(CameraController const& controller);
         void rotate(double frame_delta);
 
         void update(callback::WindowSize size, Vector2 drag_delta, float zoom);
@@ -58,14 +51,15 @@ namespace render
         [[nodiscard]] Rotation fullRotation(Vector2 drag_delta) const;
     };
 
-    class Controller
+    class CameraController
     {
         bool    dragging_;
         Vector2 drag_start_, drag_now_;
         double  scroll_;
-        Camera  camera_;
     public:
-        Controller(Camera camera);
+        Camera camera;
+
+        CameraController(Camera camera);
 
         void startDrag(callback::MousePosition mouse_position);
         void rotateDrag(callback::MousePosition mouse_position);
@@ -76,8 +70,5 @@ namespace render
         [[nodiscard]] Vector2 dragDelta() const;
         [[nodiscard]] bool    isDragging() const;
         [[nodiscard]] float   scrollDelta(double frame_delta);
-
-        [[nodiscard]] Camera&       camera();
-        [[nodiscard]] Camera const& camera() const;
     };
 }

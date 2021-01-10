@@ -10,23 +10,14 @@ namespace render
 
     namespace
     {
-        Matrix4 projection(Camera::Projection const type, callback::WindowSize const size)
+        Matrix4 projectionMatrix(callback::WindowSize const size)
         {
-            switch (type)
-            {
-            case Camera::Orthogonal:
-                return Matrix4::orthographic(-2.0f, 2.0f, -2.0f, 2.0f, 0.5f, 100.0f);
-            case Camera::Perspective:
-                return Matrix4::perspective(30.f, size.width / static_cast<float>(size.height), 0.5f, 100.f);
-            default:
-                throw std::invalid_argument("Invalid projection type");
-            }
+            return Matrix4::perspective(30.f, size.width / static_cast<float>(size.height), 0.5f, 100.f);
         }
     }
 
     Camera::Camera(float const distance, Vector3 const focus, GLuint const view_id)
-        : projection_ {Perspective},
-          focus_ {focus},
+        : focus_ {focus},
           distance_ {distance},
           rotation_ {Matrix4::identity()}
     {
@@ -42,20 +33,19 @@ namespace render
 
     Camera::Camera(Camera&& other) noexcept
         : cam_matrices_id_ {std::exchange(other.cam_matrices_id_, 0)},
-          projection_ {other.projection_},
           focus_ {other.focus_},
           distance_ {other.distance_},
-          rotation_ {std::move(other.rotation_)} {}
+          rotation_ {std::exchange(other.rotation_, {})}
+    {}
 
     Camera& Camera::operator=(Camera&& other) noexcept
     {
         if (this != &other)
         {
             cam_matrices_id_ = std::exchange(other.cam_matrices_id_, 0);
-            projection_      = other.projection_;
             focus_           = other.focus_;
             distance_        = other.distance_;
-            rotation_        = other.rotation_;
+            rotation_        = std::exchange(other.rotation_, {});
         }
         return *this;
     }
@@ -69,38 +59,25 @@ namespace render
         }
     }
 
-    void Camera::swapProjection()
-    {
-        switch (projection_)
-        {
-        case Orthogonal:
-            projection_ = Perspective;
-            break;
-        case Perspective:
-            projection_ = Orthogonal;
-            break;
-        }
-    }
-
     void Camera::swapRotationMode()
     {
         if (auto const mat = std::get_if<Matrix4>(&rotation_))
         {
             rotation_ = Quaternion::fromRotationMatrix(*mat);
             #ifdef _DEBUG
-            std::cerr << "swapped rotation mode to Quaternion" << std::endl;
+            std::cerr << "swapped rotation mode to Quaternion (Post Mult)" << std::endl;
             #endif
         }
         else if (auto const quat = std::get_if<Quaternion>(&rotation_))
         {
             rotation_ = quat->toRotationMatrix();
             #if _DEBUG
-            std::cerr << "swapped rotation mode to Euler" << std::endl;
+            std::cerr << "swapped rotation mode to Euler (Pre Mult)" << std::endl;
             #endif
         }
     }
 
-    void Camera::rotate(Controller const& controller) { rotation_ = fullRotation(controller.dragDelta()); }
+    void Camera::rotate(CameraController const& controller) { rotation_ = fullRotation(controller.dragDelta()); }
 
     void Camera::rotate(double const frame_delta)
     {
@@ -113,7 +90,7 @@ namespace render
     {
         distance_ = std::max(0.f, distance_ + zoom);
 
-        auto const projection_matrix = projection(projection_, size);
+        auto const projection_matrix = projectionMatrix(size);
         auto const rotation_matrix   = rotationMatrix(drag_delta);
 
         auto const view_matrix =
@@ -152,43 +129,43 @@ namespace render
             Quaternion::fromAngleAxis(dy, Axis::X) *
             Quaternion::fromAngleAxis(dx, Axis::Y);
 
-        return orientation * drag;
+        return drag * orientation;
     }
 
 
-    Controller::Controller(Camera camera)
+    CameraController::CameraController(Camera camera)
         : dragging_ {},
           drag_start_ {},
           drag_now_ {},
           scroll_ {},
-          camera_ {std::move(camera)} {}
+          camera {std::move(camera)} {}
 
-    void Controller::startDrag(callback::MousePosition const mouse_position)
+    void CameraController::startDrag(callback::MousePosition const mouse_position)
     {
         dragging_   = true;
         drag_start_ = drag_now_ = mouse_position;
     }
 
-    void Controller::rotateDrag(callback::MousePosition const mouse_position) { drag_now_ = mouse_position; }
+    void CameraController::rotateDrag(callback::MousePosition const mouse_position) { drag_now_ = mouse_position; }
 
-    void Controller::finishDrag()
+    void CameraController::finishDrag()
     {
-        camera_.rotate(*this);
+        camera.rotate(*this);
         dragging_   = false;
         drag_start_ = drag_now_ = Vector2 {};
     }
 
-    void Controller::scroll(double const by) { scroll_ += by; }
+    void CameraController::scroll(double const by) { scroll_ += by; }
 
-    void Controller::update(callback::WindowSize const size, double const frame_delta)
+    void CameraController::update(callback::WindowSize const size, double const frame_delta)
     {
-        camera_.update(size, dragDelta(), scrollDelta(frame_delta));
+        camera.update(size, dragDelta(), scrollDelta(frame_delta));
     }
 
-    Vector2 Controller::dragDelta() const { return drag_now_ - drag_start_; }
-    bool    Controller::isDragging() const { return dragging_; }
+    Vector2 CameraController::dragDelta() const { return drag_now_ - drag_start_; }
+    bool    CameraController::isDragging() const { return dragging_; }
 
-    float Controller::scrollDelta(double const frame_delta)
+    float CameraController::scrollDelta(double const frame_delta)
     {
         constexpr auto Min   = 1.5;
         constexpr auto Scale = 0.75;
@@ -199,7 +176,4 @@ namespace render
         scroll_ -= change;
         return static_cast<float>(-change * Scale);
     }
-
-    Camera&       Controller::camera() { return camera_; }
-    Camera const& Controller::camera() const { return camera_; }
 }
