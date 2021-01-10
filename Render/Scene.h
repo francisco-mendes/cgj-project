@@ -14,26 +14,35 @@ namespace render
     class Scene
     {
     public:
+        friend class engine::Engine;
+
         struct Builder
         {
             std::deque<Mesh>     meshes;
             std::deque<Pipeline> shaders;
             std::deque<Filter>   filters;
+            std::deque<Texture>  textures;
 
-            std::optional<Controller> camera;
-            std::unique_ptr<Object>   root;
+            Vector3 light_position;
+
+            std::optional<CameraController> camera;
+            std::unique_ptr<Object>         root = std::make_unique<Object>(nullptr);
+
+            Ptr<Pipeline const> default_shader;
         };
 
     private:
         std::deque<Mesh>     meshes_;
         std::deque<Pipeline> shaders_;
+        std::deque<Texture>  textures_;
         std::deque<Filter>   filters_;
 
-        Controller              camera_;
         std::unique_ptr<Object> root_;
+        Ptr<Pipeline const>     default_shader_;
+        Texture                 default_texture_ = Texture::white();
     public:
-        OptPtr<Filter> active_filter = nullptr;
-
+        Vector3          light_position;
+        CameraController camera_controller;
     private:
         Scene(Builder&& builder);
     public:
@@ -43,11 +52,7 @@ namespace render
         void animate();
         void resizeFilters(callback::WindowSize size);
 
-        [[nodiscard]] Controller const& controller() const;
-        [[nodiscard]] Controller&       controller();
-
-        [[nodiscard]] Object const& root() const;
-        [[nodiscard]] Object&       root();
+        [[nodiscard]] Texture const& defaultTexture() const;
     };
 }
 

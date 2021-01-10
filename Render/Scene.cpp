@@ -2,6 +2,8 @@
 
 #include <cassert>
 #include <filesystem>
+#include <optional>
+
 
 #include "../Engine/Engine.h"
 
@@ -10,17 +12,20 @@ namespace render
     Scene::Scene(Builder&& builder)
         : meshes_ {std::move(builder.meshes)},
           shaders_ {std::move(builder.shaders)},
+          textures_ {std::move(builder.textures)},
           filters_ {std::move(builder.filters)},
-          camera_ {*std::move(builder.camera)},
-          root_ {std::move(builder.root)}
+          root_ {std::move(builder.root)},
+          default_shader_ {builder.default_shader},
+          light_position {builder.light_position},
+          camera_controller {*std::move(builder.camera)}
     { }
 
     Scene Scene::setup([[maybe_unused]] engine::GlInit gl_init, config::Settings const& settings)
     {
         Builder b;
         config::hooks::setupScene(b, settings);
-        assert(b.root.get() != nullptr);
         assert(b.camera.has_value());
+        assert(b.default_shader != nullptr);
         return b;
     }
 
@@ -28,9 +33,10 @@ namespace render
     {
         config::hooks::beforeRender(*this, engine, elapsed_sec);
 
-        camera_.update(engine.windowSize(), elapsed_sec);
+        camera_controller.update(engine.windowSize(), elapsed_sec);
         root_->update(elapsed_sec);
-        root_->draw(Matrix4::identity(), nullptr, *this);
+        glUseProgram(default_shader_->programId());
+        root_->draw(Matrix4::identity(), default_shader_, *this);
 
         config::hooks::afterRender(*this, engine, elapsed_sec);
     }
@@ -45,9 +51,5 @@ namespace render
         for (auto& filter : filters_) { filter.resize(size); }
     }
 
-    Controller const& Scene::controller() const { return camera_; }
-    Controller&       Scene::controller() { return camera_; }
-
-    Object const& Scene::root() const { return *root_; }
-    Object&       Scene::root() { return *root_; }
+    Texture const& Scene::defaultTexture() const { return default_texture_; }
 }
