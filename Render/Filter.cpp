@@ -11,7 +11,7 @@
 
 namespace render
 {
-    Filter::Filter(Ptr<Pipeline const> const pipeline, config::Window const& window)
+    Filter::Filter(config::Window const& window, Ptr<Pipeline const> const pipeline)
         : pipeline_ {pipeline}
     {
         std::array const quad_vertices {
@@ -27,13 +27,13 @@ namespace render
         };
 
         auto const [width, height] = window.size;
-
+        GLuint     quad_buffer;
         // screen quad VAO
         glGenVertexArrays(1, &quad_id_);
         glBindVertexArray(quad_id_);
         {
-            glGenBuffers(1, &quad_buffer_);
-            glBindBuffer(GL_ARRAY_BUFFER, quad_buffer_);
+            glGenBuffers(1, &quad_buffer);
+            glBindBuffer(GL_ARRAY_BUFFER, quad_buffer);
             {
                 glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
                 glEnableVertexAttribArray(Pipeline::Position);
@@ -50,6 +50,8 @@ namespace render
             }
         }
         glBindVertexArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glDeleteBuffers(1, &quad_buffer);
 
         glGenFramebuffers(1, &fb_id_);
         glBindFramebuffer(GL_FRAMEBUFFER, fb_id_);
@@ -79,6 +81,38 @@ namespace render
             #endif
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    }
+
+    Filter::Filter(Filter&& other) noexcept
+        : fb_id_ {std::exchange(other.fb_id_, 0)},
+          tex_id_ {std::exchange(other.tex_id_, 0)},
+          rb_id_ {std::exchange(other.rb_id_, 0)},
+          quad_id_ {std::exchange(other.quad_id_, 0)},
+          pipeline_ {std::exchange(other.pipeline_, nullptr)}
+    {}
+
+    Filter& Filter::operator=(Filter&& other) noexcept
+    {
+        if (this != &other)
+        {
+            fb_id_    = std::exchange(other.fb_id_, 0);
+            tex_id_   = std::exchange(other.tex_id_, 0);
+            rb_id_    = std::exchange(other.rb_id_, 0);
+            quad_id_  = std::exchange(other.quad_id_, 0);
+            pipeline_ = std::exchange(other.pipeline_, nullptr);
+        }
+        return *this;
+    }
+
+    Filter::~Filter()
+    {
+        if (pipeline_ != nullptr)
+        {
+            glDeleteVertexArrays(1, &quad_id_);
+            glDeleteFramebuffers(1, &fb_id_);
+            glDeleteRenderbuffers(1, &rb_id_);
+            glDeleteTextures(1, &tex_id_);
+        }
     }
 
     void Filter::bind()

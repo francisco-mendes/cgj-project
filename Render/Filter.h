@@ -9,13 +9,20 @@ namespace render
 {
     class Filter
     {
-        GLuint fb_id_,   tex_id_, rb_id_;
-        GLuint quad_id_, quad_buffer_;
+        GLuint fb_id_, tex_id_, rb_id_, quad_id_;
 
         Ptr<Pipeline const> pipeline_;
 
     public:
-        Filter(Ptr<Pipeline const> pipeline, config::Window const& window);
+        Filter(config::Window const& window, Ptr<Pipeline const> pipeline);
+
+        Filter(Filter const& other)            = delete;
+        Filter& operator=(Filter const& other) = delete;
+
+        Filter(Filter&& other) noexcept;
+        Filter& operator=(Filter&& other) noexcept;
+
+        ~Filter();
 
         void bind();
         void finish();
