@@ -13,7 +13,7 @@ Quaternion Quaternion::fromComponents(Vector4 const components)
 
 Quaternion Quaternion::fromRotationMatrix(Matrix4 const& rotation)
 {
-    const auto [a, b, c, _] = rotation.trace();
+    auto const [a, b, c, _] = rotation.trace();
     auto const w            = std::sqrt(std::max(0.f, 1 + a + b + c)) / 2;
     auto const tx           = std::sqrt(std::max(0.f, 1 + a - b - c)) / 2;
     auto const ty           = std::sqrt(std::max(0.f, 1 - a + b - c)) / 2;
@@ -39,11 +39,11 @@ Quaternion Quaternion::fromAngleAxis(Radians const angle, Axis const axis)
 
     switch (axis)
     {
-        case Axis::X: return Quaternion {t, v, 0, 0}.cleaned().normalized();
-        case Axis::Y: return Quaternion {t, 0, v, 0}.cleaned().normalized();
-        case Axis::Z: return Quaternion {t, 0, 0, v}.cleaned().normalized();
-        default:
-            throw std::invalid_argument("Invalid axis provided for quaternion");
+    case Axis::X: return Quaternion {t, v, 0, 0}.cleaned().normalized();
+    case Axis::Y: return Quaternion {t, 0, v, 0}.cleaned().normalized();
+    case Axis::Z: return Quaternion {t, 0, 0, v}.cleaned().normalized();
+    default:
+        throw std::invalid_argument("Invalid axis provided for quaternion");
     }
 }
 

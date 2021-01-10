@@ -8,7 +8,7 @@ namespace
 {
     GLFWwindow* setupWindow(config::Window const& window)
     {
-        const auto [title, size, fullscreen, vsync] = window;
+        auto const [title, size, fullscreen, vsync] = window;
 
         auto const monitor = static_cast<bool>(fullscreen) ? glfwGetPrimaryMonitor() : nullptr;
         auto const win     = glfwCreateWindow(size.width, size.height, title, monitor, nullptr);
