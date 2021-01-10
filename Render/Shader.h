@@ -51,7 +51,8 @@ namespace render
 
         constexpr static GLuint Camera = 0;
     private:
-        GLuint program_id_, model_id_, color_id_, eye_id_;
+        GLuint program_id_, model_id_, color_id_, eye_id_, light_id_, texture_id_;
+        bool   is_filter_;
     public:
         Pipeline(Pipeline const&)            = delete;
         Pipeline& operator=(Pipeline const&) = delete;
@@ -59,20 +60,23 @@ namespace render
         Pipeline(Pipeline&& other) noexcept;
         Pipeline& operator=(Pipeline&&) noexcept;
 
-        Pipeline(std::initializer_list<Shader> shaders);
+        Pipeline(std::initializer_list<Shader> shaders, bool is_filter = true);
 
         ~Pipeline();
 
         template <class... Shaders>
-        explicit Pipeline(Shaders ...shaders) : Pipeline({std::move(shaders) ...})
+        explicit Pipeline(bool is_filter, Shaders ...shaders) : Pipeline({std::move(shaders) ...}, is_filter)
         {
             static_assert((std::is_same_v<Shader, Shaders> && ...));
         }
 
+        [[nodiscard]] bool   isFilter() const;
         [[nodiscard]] GLuint programId() const;
         [[nodiscard]] GLuint modelId() const;
         [[nodiscard]] GLuint colorId() const;
         [[nodiscard]] GLuint eyeId() const;
+        [[nodiscard]] GLuint lightId() const;
+        [[nodiscard]] GLuint textureId() const;
     };
 }
 

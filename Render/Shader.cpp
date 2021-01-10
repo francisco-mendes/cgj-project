@@ -24,7 +24,7 @@ namespace render
             }
         }
 
-        void checkLinkage(const GLuint program_id)
+        void checkLinkage(GLuint const program_id)
         {
             GLint linked;
             glGetProgramiv(program_id, GL_LINK_STATUS, &linked);
@@ -115,7 +115,10 @@ namespace render
         : program_id_ {std::exchange(other.program_id_, 0)},
           model_id_ {std::exchange(other.model_id_, 0)},
           color_id_ {std::exchange(other.color_id_, 0)},
-          eye_id_ {std::exchange(other.eye_id_, 0)}
+          eye_id_ {std::exchange(other.eye_id_, 0)},
+          light_id_ {std::exchange(other.light_id_, 0)},
+          texture_id_ {std::exchange(other.texture_id_, 0)},
+          is_filter_ {std::exchange(other.is_filter_, false)}
     {}
 
     Pipeline& Pipeline::operator=(Pipeline&& other) noexcept
@@ -126,6 +129,9 @@ namespace render
             model_id_   = std::exchange(other.model_id_, 0);
             color_id_   = std::exchange(other.color_id_, 0);
             eye_id_     = std::exchange(other.eye_id_, 0);
+            light_id_   = std::exchange(other.light_id_, 0);
+            texture_id_ = std::exchange(other.texture_id_, 0);
+            is_filter_  = std::exchange(other.is_filter_, false);
         }
         return *this;
     }
@@ -138,8 +144,9 @@ namespace render
         }
     }
 
-    Pipeline::Pipeline(std::initializer_list<Shader> shaders)
-        : program_id_ {glCreateProgram()}
+    Pipeline::Pipeline(std::initializer_list<Shader> shaders, bool const is_filter)
+        : program_id_ {glCreateProgram()},
+          is_filter_ {is_filter}
     {
         for (auto const& shader : shaders)
         {
@@ -153,9 +160,11 @@ namespace render
         glLinkProgram(program_id_);
         checkLinkage(program_id_);
 
-        model_id_ = glGetUniformLocation(program_id_, "ModelMatrix");
-        color_id_ = glGetUniformLocation(program_id_, "Color");
-        eye_id_   = glGetUniformLocation(program_id_, "Eye");
+        model_id_   = glGetUniformLocation(program_id_, "ModelMatrix");
+        color_id_   = glGetUniformLocation(program_id_, "Color");
+        eye_id_     = glGetUniformLocation(program_id_, "Eye");
+        light_id_   = glGetUniformLocation(program_id_, "Light");
+        texture_id_ = glGetUniformLocation(program_id_, "Texture");
 
         auto const camera_id = glGetUniformBlockIndex(program_id_, "CameraMatrices");
         glUniformBlockBinding(program_id_, camera_id, Camera);
@@ -166,10 +175,13 @@ namespace render
         }
     }
 
+    bool   Pipeline::isFilter() const { return is_filter_; }
     GLuint Pipeline::programId() const { return program_id_; }
     GLuint Pipeline::modelId() const { return model_id_; }
     GLuint Pipeline::colorId() const { return color_id_; }
     GLuint Pipeline::eyeId() const { return eye_id_; }
+    GLuint Pipeline::lightId() const { return light_id_; }
+    GLuint Pipeline::textureId() const { return texture_id_; }
 }
 
 bool operator==(render::Pipeline const& lhs, render::Pipeline const& rhs)
