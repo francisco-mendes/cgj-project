@@ -8,14 +8,20 @@ namespace engine
 {
     Engine::Engine(GlfwHandle glfw, render::Scene scene, config::Settings const& settings)
         : glfw_ {std::move(glfw)},
-          scene_ {std::move(scene)}
+          scene {std::move(scene)},
+          mesh_controller {&this->scene.meshes_},
+          texture_controller {&this->scene.textures_},
+          pipeline_controller {&this->scene.shaders_},
+          filter_controller {&this->scene.filters_},
+          object_controller {this->scene.root_.get()}
     {
         auto const [width, height] = settings.window.size;
 
         size_         = {width, height};
-        snapshot_dir_ = settings.snapshot.dir;
+        snapshot_dir_ = settings.paths.snapshot;
         snap_num_     = 1;
 
+        create_directory(snapshot_dir_);
         glfw_.registerEngine(this);
         setupErrorCallback(this);
     }
@@ -26,14 +32,30 @@ namespace engine
     }
 
     Ptr<GLFWwindow>      Engine::window() { return glfw_.window_; }
-    render::Scene&       Engine::scene() { return scene_; }
     callback::WindowSize Engine::windowSize() const { return size_; }
 
     void Engine::resize(callback::WindowSize const size)
     {
         glViewport(0, 0, size.width, size.height);
-        scene_.resizeFilters(size);
+        scene.resizeFilters(size);
         size_ = size;
+    }
+
+    void Engine::resetControllers()
+    {
+        mesh_controller.reset();
+        texture_controller.reset();
+        pipeline_controller.reset();
+    }
+
+    void Engine::setControllers(Ptr<render::Object const> const object)
+    {
+        if (object != nullptr)
+        {
+            mesh_controller.set(object->mesh);
+            texture_controller.set(object->texture);
+            pipeline_controller.set(object->shaders);
+        }
     }
 
     void Engine::snapshot()
@@ -46,9 +68,9 @@ namespace engine
         glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels.data());
 
         // Convert to FreeImage format & save to file
-        const auto image    = FreeImage_ConvertFromRawBits(pixels.data(), width, height, stride, 24, 0, 0, 0, false);
-        const auto filename = "snapshot" + std::to_string(snap_num_) + ".png";
-        const auto path     = snapshot_dir_ / filename;
+        auto const image    = FreeImage_ConvertFromRawBits(pixels.data(), width, height, stride, 24, 0, 0, 0, false);
+        auto const filename = "snapshot" + std::to_string(snap_num_) + ".png";
+        auto const path     = snapshot_dir_ / filename;
 
         #ifdef _DEBUG
         std::cerr << "saving snapshot to " << path << std::endl;
@@ -76,7 +98,7 @@ namespace engine
             // Render scene
             // Double Buffers
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            scene_.render(*this, delta);
+            scene.render(*this, delta);
             ///////////////////////////////
 
             glfw_.swapBuffers();
