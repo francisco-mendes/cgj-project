@@ -56,7 +56,7 @@
             <PreprocessorDefinitions>GLEW_STATIC;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
             <ConformanceMode>true</ConformanceMode>
             <LanguageStandard>stdcpp17</LanguageStandard>
-            <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw\include;$(SolutionDir)lib\glew\include;$(SolutionDir)lib\FreeImage;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw\include;$(SolutionDir)lib\glew\include;$(SolutionDir)lib\FreeImage;$(SolutionDir)lib\stb\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
             <DisableLanguageExtensions>true</DisableLanguageExtensions>
             <AdditionalOptions>
             </AdditionalOptions>
@@ -84,7 +84,7 @@
             <PreprocessorDefinitions>GLEW_STATIC;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
             <ConformanceMode>true</ConformanceMode>
             <LanguageStandard>stdcpp17</LanguageStandard>
-            <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw\include;$(SolutionDir)lib\glew\include;$(SolutionDir)lib\FreeImage;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+            <AdditionalIncludeDirectories>$(SolutionDir)lib\glfw\include;$(SolutionDir)lib\glew\include;$(SolutionDir)lib\FreeImage;$(SolutionDir)lib\stb\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
             <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
             <DisableLanguageExtensions>true</DisableLanguageExtensions>
             <AdditionalOptions>
@@ -113,6 +113,7 @@
         <ClCompile Include = "Engine\Error.cpp" />
         <ClCompile Include = "Engine\GlfwHandle.cpp" />
         <ClCompile Include = "Engine\GlInit.cpp" />
+        <ClCompile Include = "Engine\Controller.cpp" />
         <ClCompile Include = "Math\Matrix.cpp" />
         <ClCompile Include = "Math\Quaternion.cpp" />
         <ClCompile Include = "Math\Vector.cpp" />
@@ -122,6 +123,7 @@
         <ClCompile Include = "Render\Object.cpp" />
         <ClCompile Include = "Render\Scene.cpp" />
         <ClCompile Include = "Render\Shader.cpp" />
+        <ClCompile Include = "Render\Texture.cpp" />
         <ClCompile Include = "Render\Transform.cpp" />
     </ItemGroup>
     <ItemGroup>
@@ -130,10 +132,14 @@
         <ClInclude Include = "Engine\Error.h" />
         <ClInclude Include = "Engine\GlfwHandle.h" />
         <ClInclude Include = "Engine\GlInit.h" />
+        <ClInclude Include = "Engine\Controller.h" />
+        <ClInclude Include = "lib\stb\include\stb_image.h" />
         <ClInclude Include = "Render\Filter.h" />
         <ClInclude Include = "Render\Object.h" />
+        <ClInclude Include = "Render\Texture.h" />
         <ClInclude Include = "Render\Transform.h" />
         <ClInclude Include = "Utils.h" />
+        <ClInclude Include = "lib\FreeImage\FreeImage.h" />
         <ClInclude Include = "lib\glew\include\GL\eglew.h" />
         <ClInclude Include = "lib\glew\include\GL\glew.h" />
         <ClInclude Include = "lib\glew\include\GL\glxew.h" />
@@ -151,17 +157,48 @@
         <ClInclude Include = "Render\Shader.h" />
     </ItemGroup>
     <ItemGroup>
-        <Content Include = "Assets\Cube.obj" />
-        <Content Include = "Assets\Plane.obj" />
-        <Content Include = "Shaders\bp_frag.glsl" />
-        <Content Include = "Shaders\bp_vert.glsl" />
-        <Content Include = "Shaders\Filters\invert_frag.glsl" />
-        <Content Include = "Shaders\cel_frag.glsl" />
-        <Content Include = "Shaders\cel_vert.glsl" />
-        <Content Include = "Shaders\Filters\invert_vert.glsl" />
+        <Content Include = "Assets\Meshes\Cube.obj" />
+        <Content Include = "Assets\Meshes\Plane.obj" />
+        <Content Include = "Assets\Meshes\Sphere.obj" />
+        <Content Include = "Assets\Meshes\Sphere16.obj" />
+        <Content Include = "Assets\Shaders\bp_frag.glsl" />
+        <Content Include = "Assets\Shaders\bp_vert.glsl" />
+        <Content Include = "Assets\Shaders\cel_frag.glsl" />
+        <Content Include = "Assets\Shaders\cel_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\blue_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\blue_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\blur_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\blur_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\edge_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\edge_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\emboss_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\emboss_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\grayscale_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\grayscale_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\green_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\green_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\highSaturation_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\highSaturation_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\invert_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\invert_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\oilPainting_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\oilPainting_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\red_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\red_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\sepia_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\sepia_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\sharpen_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\sharpen_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\sketch_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\sketch_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\sobel_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\sobel_vert.glsl" />
+        <Content Include = "Assets\Shaders\Filters\swirl_frag.glsl" />
+        <Content Include = "Assets\Shaders\Filters\swirl_vert.glsl" />
+        <Content Include = "Assets\Textures\awesomeface.png" />
     </ItemGroup>
     <ItemGroup>
-        <Folder Include = "CG_Snaps" />
+        <Folder Include = "Snapshots" />
     </ItemGroup>
     <Import Project = "$(VCTargetsPath)\Microsoft.Cpp.targets" />
     <ImportGroup Label = "ExtensionTargets">

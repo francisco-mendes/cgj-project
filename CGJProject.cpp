@@ -465,8 +465,12 @@ int main()
             Mode::Windowed,
             VSync::On
         },
-        Snapshot {
-            "./CG_Snaps"
+        Paths {
+            "Assets/Meshes",
+            "Assets/Textures",
+            "Assets/Shaders",
+            "Assets/Shaders/Filters",
+            "Snapshots"
         }
     };
 

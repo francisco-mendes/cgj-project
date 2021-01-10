@@ -36,15 +36,19 @@ namespace config
         VSync           vsync;
     };
 
-    struct Snapshot
+    struct Paths
     {
-        std::filesystem::path dir;
+        std::filesystem::path meshes;
+        std::filesystem::path textures;
+        std::filesystem::path shaders;
+        std::filesystem::path filters;
+        std::filesystem::path snapshot;
     };
 
     struct Settings
     {
-        Version  version;
-        Window   window;
-        Snapshot snapshot;
+        Version version;
+        Window  window;
+        Paths   paths;
     };
 }
