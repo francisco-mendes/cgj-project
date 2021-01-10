@@ -8,12 +8,8 @@
 #include "Utils.h"
 #include "Engine/Engine.h"
 #include "Engine/GlInit.h"
+#include "Render/Object.h"
 #include "Render/Shader.h"
-
-constexpr auto Offset = -3.f;
-
-Ptr<render::Filter> Inverted, Grayscale, Sharpen, Blur, Edge, Sobel, Sepia, Red, Blue, Green, HighSaturation, Emboss,
-                    Sketch, OilPainting, Swirl;
 
 namespace config::hooks
 {
@@ -34,7 +30,7 @@ namespace config::hooks
         {
             double x_pos, y_pos;
             glfwGetCursorPos(engine.window(), &x_pos, &y_pos);
-            engine.scene().controller().startDrag({x_pos, y_pos});
+            engine.scene.camera_controller.startDrag({x_pos, y_pos});
 
             #if _DEBUG
             std::cerr << "start pos: " << x_pos << ", " << y_pos << std::endl;
@@ -42,7 +38,7 @@ namespace config::hooks
         }
         else if (button.action == GLFW_RELEASE)
         {
-            engine.scene().controller().finishDrag();
+            engine.scene.camera_controller.finishDrag();
         }
     }
 
@@ -55,7 +51,7 @@ namespace config::hooks
             std::cerr << "position: " << position.x << ", " << position.y << std::endl;
             #endif
 
-            engine.scene().controller().rotateDrag(position);
+            engine.scene.camera_controller.rotateDrag(position);
         }
     }
 
@@ -65,7 +61,7 @@ namespace config::hooks
         std::cerr << "zoom: " << scroll << std::endl;
         #endif
 
-        engine.scene().controller().scroll(scroll);
+        engine.scene.camera_controller.scroll(scroll);
     }
 
     void onKeyboardButton(engine::Engine& engine, callback::KeyboardButton const button)
@@ -76,77 +72,96 @@ namespace config::hooks
             case GLFW_KEY_ESCAPE:
                 engine.terminate();
                 break;
-            case GLFW_KEY_P:
-                engine.scene().controller().camera().swapProjection();
-                break;
-            case GLFW_KEY_G:
-                engine.scene().controller().camera().swapRotationMode();
-                break;
-            case GLFW_KEY_M:
-                engine.scene().animate();
-                break;
-            case GLFW_KEY_W:
-                engine.scene().root().transform.position.z -= 0.5;
-                break;
-            case GLFW_KEY_A:
-                engine.scene().root().transform.position.x -= 0.5;
-                break;
-            case GLFW_KEY_S:
-                engine.scene().root().transform.position.z += 0.5;
-                break;
-            case GLFW_KEY_D:
-                engine.scene().root().transform.position.x += 0.5;
-                break;
-            case GLFW_KEY_T:
+
+            case GLFW_KEY_F1:
                 engine.snapshot();
                 break;
+            case GLFW_KEY_F11:
+                engine.scene.animate();
+                break;
+            case GLFW_KEY_F12:
+                engine.scene.camera_controller.camera.swapRotationMode();
+                break;
+
+            case GLFW_KEY_W:
+                if (auto const obj = engine.object_controller.get(); obj)
+                    obj->transform.position.z -= 0.5;
+                break;
+            case GLFW_KEY_S:
+                if (auto const obj = engine.object_controller.get(); obj)
+                    obj->transform.position.z += 0.5;
+                break;
+            case GLFW_KEY_A:
+                if (auto const obj = engine.object_controller.get(); obj)
+                    obj->transform.position.x -= 0.5;
+                break;
+            case GLFW_KEY_D:
+                if (auto const obj = engine.object_controller.get(); obj)
+                    obj->transform.position.x += 0.5;
+                break;
+            case GLFW_KEY_Q:
+                if (auto const obj = engine.object_controller.get(); obj)
+                    obj->transform.position.y -= 0.5;
+                break;
+            case GLFW_KEY_E:
+                if (auto const obj = engine.object_controller.get(); obj)
+                    obj->transform.position.y += 0.5;
+                break;
+
             case GLFW_KEY_R:
-                engine.scene().active_filter = nullptr;
+                engine.object_controller.recurse();
+                engine.resetControllers();
                 break;
-            case GLFW_KEY_1:
-                engine.scene().active_filter = Red;
+            case GLFW_KEY_T:
+                engine.setControllers(engine.object_controller.parent());
                 break;
-            case GLFW_KEY_2:
-                engine.scene().active_filter = Green;
+            case GLFW_KEY_F:
+                engine.setControllers(engine.object_controller.prev());
                 break;
-            case GLFW_KEY_3:
-                engine.scene().active_filter = Blue;
+            case GLFW_KEY_G:
+                engine.setControllers(engine.object_controller.next());
                 break;
-            case GLFW_KEY_4:
-                engine.scene().active_filter = Grayscale;
+            case GLFW_KEY_X:
+                engine.object_controller.remove();
+                engine.resetControllers();
                 break;
-            case GLFW_KEY_5:
-                engine.scene().active_filter = Sepia;
+            case GLFW_KEY_C:
+                engine.object_controller.create();
+                engine.resetControllers();
                 break;
-            case GLFW_KEY_6:
-                engine.scene().active_filter = Inverted;
+
+            case GLFW_KEY_I:
+                engine.filter_controller.prev();
                 break;
-            case GLFW_KEY_7:
-                engine.scene().active_filter = Sharpen;
+            case GLFW_KEY_O:
+                engine.filter_controller.next();
                 break;
-            case GLFW_KEY_8:
-                engine.scene().active_filter = Edge;
+
+            case GLFW_KEY_Y:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    engine.object_controller.get()->shaders = engine.pipeline_controller.prev();
                 break;
-            case GLFW_KEY_9:
-                engine.scene().active_filter = Emboss;
+            case GLFW_KEY_U:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    engine.object_controller.get()->shaders = engine.pipeline_controller.next();
                 break;
-            case GLFW_KEY_0:
-                engine.scene().active_filter = Sobel;
+
+            case GLFW_KEY_H:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    engine.object_controller.get()->texture = engine.texture_controller.prev();
                 break;
-            case GLFW_KEY_F1:
-                engine.scene().active_filter = HighSaturation;
+            case GLFW_KEY_J:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    engine.object_controller.get()->texture = engine.texture_controller.next();
                 break;
-            case GLFW_KEY_F2:
-                engine.scene().active_filter = Blur;
+
+            case GLFW_KEY_N:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    engine.object_controller.get()->mesh = engine.mesh_controller.prev();
                 break;
-            case GLFW_KEY_F3:
-                engine.scene().active_filter = Sketch;
-                break;
-            case GLFW_KEY_F4:
-                engine.scene().active_filter = OilPainting;
-                break;
-            case GLFW_KEY_F5:
-                engine.scene().active_filter = Swirl;
+            case GLFW_KEY_M:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    engine.object_controller.get()->mesh = engine.mesh_controller.next();
                 break;
             }
     }
@@ -159,6 +174,8 @@ namespace config::hooks
     {
         auto const [width, height] = settings.window.size;
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_TRUE);
@@ -182,144 +199,112 @@ namespace config::hooks
         constexpr auto CubeMargin = 0.9f;
         auto const     Scale      = Vector3::filled(CubeMargin);
 
-        path const shaders = "Shaders/";
-        path const assets  = "Assets/";
+        auto const& [meshes, textures, shaders, filters, _] = settings.paths;
 
         Ptr<Pipeline const> bp_pipeline, cel_pipeline, invert_pipeline, grayscale_pipeline, sharpen_pipeline,
                             blur_pipeline, edge_pipeline, sobel_pipeline, sepia_pipeline, red_pipeline, green_pipeline,
                             blue_pipeline, high_saturation_pipeline, emboss_pipeline, sketch_pipeline,
                             oil_painting_pipeline, swirl_pipeline;
         Ptr<Mesh const> plane_mesh, piece_mesh;
-
         logTimeTaken(
             "Loading Assets",
             [&]()
             {
-                bp_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "bp_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "bp_frag.glsl")
-                );
+                plane_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(meshes / "Plane.obj"));
+                &builder.meshes.emplace_back(MeshLoader::fromFile(meshes / "Cube.obj"));
+                piece_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(meshes / "Sphere16.obj"));
 
-                cel_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "cel_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "cel_frag.glsl")
-                );
-
-                invert_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "invert_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "invert_frag.glsl")
-                );
-
-                grayscale_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "grayscale_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "grayscale_frag.glsl")
-                );
-
-                sharpen_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "sharpen_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "sharpen_frag.glsl")
-                );
-
-                blur_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "blur_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "blur_frag.glsl")
-                );
-
-                edge_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "edge_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "edge_frag.glsl")
-                );
-
-                sobel_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "sobel_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "sobel_frag.glsl")
-                );
-
-                sepia_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "sepia_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "sepia_frag.glsl")
-                );
-
-                red_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "red_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "red_frag.glsl")
-                );
-
-                green_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "green_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "green_frag.glsl")
-                );
-
-                blue_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "blue_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "blue_frag.glsl")
-                );
-
-                high_saturation_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "highSaturation_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "highSaturation_frag.glsl")
-                );
-
-                emboss_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "emboss_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "emboss_frag.glsl")
-                );
-
-                sketch_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "sketch_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "sketch_frag.glsl")
-                );
-
-                oil_painting_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "oilPainting_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "oilPainting_frag.glsl")
-                );
-
-                swirl_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "swirl_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "swirl_frag.glsl")
-                );
-
-                plane_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Plane.obj"));
-                &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Cube.obj"));
-                piece_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(assets / "Sphere16.obj"));
+                &builder.textures.emplace_back(TextureLoader::fromFile(textures / "awesomeface.png"));
             }
         );
         logTimeTaken(
-            "Loading Assets",
+            "Loading Shaders",
             [&]()
             {
                 bp_pipeline = &builder.shaders.emplace_back(
+                    false,
                     Shader::fromFile(Shader::Vertex, shaders / "bp_vert.glsl"),
                     Shader::fromFile(Shader::Fragment, shaders / "bp_frag.glsl")
                 );
                 cel_pipeline = &builder.shaders.emplace_back(
+                    false,
                     Shader::fromFile(Shader::Vertex, shaders / "cel_vert.glsl"),
                     Shader::fromFile(Shader::Fragment, shaders / "cel_frag.glsl")
                 );
                 invert_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "invert_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "invert_frag.glsl")
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "invert_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "invert_frag.glsl")
                 );
                 grayscale_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "grayscale_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "grayscale_frag.glsl")
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "grayscale_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "grayscale_frag.glsl")
                 );
                 sharpen_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "sharpen_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "sharpen_frag.glsl")
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "sharpen_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "sharpen_frag.glsl")
                 );
                 blur_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "blur_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "blur_frag.glsl")
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "blur_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "blur_frag.glsl")
                 );
                 edge_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "edge_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "edge_frag.glsl")
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "edge_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "edge_frag.glsl")
                 );
                 sobel_pipeline = &builder.shaders.emplace_back(
-                    Shader::fromFile(Shader::Vertex, shaders / "Filters" / "sobel_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, shaders / "Filters" / "sobel_frag.glsl")
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "sobel_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "sobel_frag.glsl")
+                );
+                sepia_pipeline = &builder.shaders.emplace_back(
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "sepia_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "sepia_frag.glsl")
+                );
+                red_pipeline = &builder.shaders.emplace_back(
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "red_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "red_frag.glsl")
+                );
+                green_pipeline = &builder.shaders.emplace_back(
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "green_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "green_frag.glsl")
+                );
+                blue_pipeline = &builder.shaders.emplace_back(
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "blue_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "blue_frag.glsl")
+                );
+                high_saturation_pipeline = &builder.shaders.emplace_back(
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "highSaturation_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "highSaturation_frag.glsl")
+                );
+                emboss_pipeline = &builder.shaders.emplace_back(
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "emboss_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "emboss_frag.glsl")
+                );
+                sketch_pipeline = &builder.shaders.emplace_back(
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "sketch_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "sketch_frag.glsl")
+                );
+                oil_painting_pipeline = &builder.shaders.emplace_back(
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "oilPainting_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "oilPainting_frag.glsl")
+                );
+                swirl_pipeline = &builder.shaders.emplace_back(
+                    true,
+                    Shader::fromFile(Shader::Vertex, filters / "swirl_vert.glsl"),
+                    Shader::fromFile(Shader::Fragment, filters / "swirl_frag.glsl")
                 );
             }
         );
@@ -328,21 +313,21 @@ namespace config::hooks
             "Creating Filters",
             [&]()
             {
-                Inverted       = &builder.filters.emplace_back(invert_pipeline, settings.window);
-                Grayscale      = &builder.filters.emplace_back(grayscale_pipeline, settings.window);
-                Sharpen        = &builder.filters.emplace_back(sharpen_pipeline, settings.window);
-                Blur           = &builder.filters.emplace_back(blur_pipeline, settings.window);
-                Edge           = &builder.filters.emplace_back(edge_pipeline, settings.window);
-                Sobel          = &builder.filters.emplace_back(sobel_pipeline, settings.window);
-                Sepia          = &builder.filters.emplace_back(sepia_pipeline, settings.window);
-                Red            = &builder.filters.emplace_back(red_pipeline, settings.window);
-                Green          = &builder.filters.emplace_back(green_pipeline, settings.window);
-                Blue           = &builder.filters.emplace_back(blue_pipeline, settings.window);
-                HighSaturation = &builder.filters.emplace_back(high_saturation_pipeline, settings.window);
-                Emboss         = &builder.filters.emplace_back(emboss_pipeline, settings.window);
-                Sketch         = &builder.filters.emplace_back(sketch_pipeline, settings.window);
-                OilPainting    = &builder.filters.emplace_back(oil_painting_pipeline, settings.window);
-                Swirl          = &builder.filters.emplace_back(swirl_pipeline, settings.window);
+                builder.filters.emplace_back(settings.window, invert_pipeline);
+                builder.filters.emplace_back(settings.window, grayscale_pipeline);
+                builder.filters.emplace_back(settings.window, sharpen_pipeline);
+                builder.filters.emplace_back(settings.window, blur_pipeline);
+                builder.filters.emplace_back(settings.window, edge_pipeline);
+                builder.filters.emplace_back(settings.window, sobel_pipeline);
+                builder.filters.emplace_back(settings.window, sepia_pipeline);
+                builder.filters.emplace_back(settings.window, red_pipeline);
+                builder.filters.emplace_back(settings.window, green_pipeline);
+                builder.filters.emplace_back(settings.window, blue_pipeline);
+                builder.filters.emplace_back(settings.window, high_saturation_pipeline);
+                builder.filters.emplace_back(settings.window, emboss_pipeline);
+                builder.filters.emplace_back(settings.window, sketch_pipeline);
+                builder.filters.emplace_back(settings.window, oil_painting_pipeline);
+                builder.filters.emplace_back(settings.window, swirl_pipeline);
             }
         );
 
@@ -350,16 +335,16 @@ namespace config::hooks
             "Setting up scene",
             [&]()
             {
-                builder.camera = Camera(20, Vector3::filled(0), Pipeline::Camera);
+                builder.light_position = Vector3 {4, 4, 4};
+                builder.camera         = Camera(20, Vector3::filled(0), Pipeline::Camera);
+                builder.default_shader = bp_pipeline;
 
-                builder.root = std::make_unique<Object>(plane_mesh, Vector4 {0.8, 0.8, 0.8, 1}, bp_pipeline);
-                auto& plane  = *builder.root.get();
+                auto& plane = builder.root->emplaceChild(plane_mesh, Vector4 {0.8, 0.8, 0.8, 1});
 
-                auto& figure = plane.children.emplace_back(cel_pipeline);
-                // auto& figure     = plane.children.emplace_back();
+                auto& figure     = plane.emplaceChild(cel_pipeline);
                 figure.transform = {{0.5, 0.5, 0}};
 
-                auto& l     = figure.children.emplace_back();
+                auto& l     = figure.emplaceChild();
                 l.transform = {{1, 0, 0}, Quaternion::fromAngleAxis(Pi, Axis::Y)};
                 l.animation = {
                     l.transform, {{1, 1, 1}, Quaternion::fromAngleAxis(2, {0.7, 0.2, 0.7})}
@@ -367,10 +352,10 @@ namespace config::hooks
                 {
                     auto const color = Vector4 {0.7, 0, 0, 1};
 
-                    auto& c1 = l.children.emplace_back(piece_mesh, color);
-                    auto& c2 = l.children.emplace_back(piece_mesh, color);
-                    auto& c3 = l.children.emplace_back(piece_mesh, color);
-                    auto& c4 = l.children.emplace_back(piece_mesh, color);
+                    auto& c1 = l.emplaceChild(piece_mesh, color);
+                    auto& c2 = l.emplaceChild(piece_mesh, color);
+                    auto& c3 = l.emplaceChild(piece_mesh, color);
+                    auto& c4 = l.emplaceChild(piece_mesh, color);
 
                     c1.transform.position = {0, 0, 0};
                     c2.transform.position = {1, 0, 0};
@@ -381,13 +366,13 @@ namespace config::hooks
                         element->transform.scaling = Scale;
                 }
 
-                auto& t1     = figure.children.emplace_back();
+                auto& t1     = figure.emplaceChild();
                 t1.transform = {{-1, 1, 0}, Quaternion::fromAngleAxis(Pi * 3 / 2, Axis::Z)};
                 t1.animation = {
                     t1.transform, {{0, 0, -2}, Quaternion::fromAngleAxis(-Pi * 2, Axis::Z)}
                 };
 
-                auto& t2     = figure.children.emplace_back();
+                auto& t2     = figure.emplaceChild();
                 t2.transform = {{0, 3, 0}, Quaternion::fromAngleAxis(Pi, Axis::Z)};
                 t2.animation = {
                     t2.transform, {{3, 4, 0}, Quaternion::fromAngleAxis(Pi / 2, Axis::X)}
@@ -398,10 +383,10 @@ namespace config::hooks
 
                     for (auto [t, color] : std::array {std::pair {&t1, color1}, std::pair {&t2, color2}})
                     {
-                        auto& c1 = t->children.emplace_back(piece_mesh, color);
-                        auto& c2 = t->children.emplace_back(piece_mesh, color);
-                        auto& c3 = t->children.emplace_back(piece_mesh, color);
-                        auto& c4 = t->children.emplace_back(piece_mesh, color);
+                        auto& c1 = t->emplaceChild(piece_mesh, color);
+                        auto& c2 = t->emplaceChild(piece_mesh, color);
+                        auto& c3 = t->emplaceChild(piece_mesh, color);
+                        auto& c4 = t->emplaceChild(piece_mesh, color);
 
                         c1.transform.position = {0, 0, 0};
                         c2.transform.position = {-1, 0, 0};
@@ -413,7 +398,7 @@ namespace config::hooks
                     }
                 }
 
-                auto& line     = figure.children.emplace_back();
+                auto& line     = figure.emplaceChild();
                 line.transform = {{-2, 0, 0}};
                 line.animation = {
                     line.transform, {{0, 0, 0}, Quaternion::fromAngleAxis(Pi / 4, Axis::Y)}
@@ -421,10 +406,10 @@ namespace config::hooks
                 {
                     constexpr auto color = Vector4 {0.7, 0, 0.7, 1};
 
-                    auto& c1 = line.children.emplace_back(piece_mesh, color);
-                    auto& c2 = line.children.emplace_back(piece_mesh, color);
-                    auto& c3 = line.children.emplace_back(piece_mesh, color);
-                    auto& c4 = line.children.emplace_back(piece_mesh, color);
+                    auto& c1 = line.emplaceChild(piece_mesh, color);
+                    auto& c2 = line.emplaceChild(piece_mesh, color);
+                    auto& c3 = line.emplaceChild(piece_mesh, color);
+                    auto& c4 = line.emplaceChild(piece_mesh, color);
 
                     c1.transform.position = {0, 0, 0};
                     c2.transform.position = {0, 1, 0};
@@ -440,14 +425,14 @@ namespace config::hooks
 
     void beforeRender(render::Scene& scene, engine::Engine& engine, double const elapsed_sec)
     {
-        if (scene.active_filter != nullptr)
-            scene.active_filter->bind();
+        if (engine.filter_controller.get() != nullptr)
+            engine.filter_controller.get()->bind();
     }
 
     void afterRender(render::Scene& scene, engine::Engine& engine, double const elapsed_sec)
     {
-        if (scene.active_filter != nullptr)
-            scene.active_filter->finish();
+        if (engine.filter_controller.get() != nullptr)
+            engine.filter_controller.get()->finish();
     }
 
     #pragma endregion Scene
