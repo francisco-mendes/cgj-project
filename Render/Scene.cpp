@@ -34,6 +34,7 @@ namespace render
         config::hooks::beforeRender(*this, engine, elapsed_sec);
 
         camera_controller.update(engine.windowSize(), elapsed_sec);
+        scene_block_.update(camera_controller.camera.position(), light_position);
         root_->update(elapsed_sec);
         glUseProgram(default_shader_->programId());
         root_->draw(Matrix4::identity(), default_shader_, *this);

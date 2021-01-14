@@ -339,7 +339,8 @@ namespace config::hooks
                 builder.camera         = Camera(20, Vector3::filled(0), Pipeline::Camera);
                 builder.default_shader = bp_pipeline;
 
-                auto& plane = builder.root->emplaceChild(plane_mesh, Vector4 {0.8, 0.8, 0.8, 1});
+                auto& plane = builder.root->emplaceChild(plane_mesh, Vector4 {0.6, 0.6, 0.6, 1});
+                plane.shininess = 128.f;
 
                 auto& figure     = plane.emplaceChild(cel_pipeline);
                 figure.transform = {{0.5, 0.5, 0}};

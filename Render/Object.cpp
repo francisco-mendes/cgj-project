@@ -65,12 +65,16 @@ namespace render
             {
                 glUniform4f(shaders->colorId(), r, g, b, alpha);
 
-                auto const [ex, ey, ez] = scene.camera_controller.camera.position();
-                glUniform3f(shaders->eyeId(), ex, ey, ez);
+                if (auto const [r, g, b] = ambient_color; shaders->ambientId() != -1)
+                {
+                    glUniform3f(shaders->ambientId(), r, g, b);
+                }
 
-                auto const [lx, ly, lz] = scene.light_position;
-                glUniform3f(shaders->lightId(), lx, ly, lz);
-
+                if (auto const [r, g, b] = specular_color; shaders->specularId() != -1)
+                {
+                    glUniform3f(shaders->specularId(), r, g, b);
+                    glUniform1f(shaders->shininessId(), shininess);
+                }
                 auto const texture_bind = texture != nullptr ? texture->texId() : scene.defaultTexture().texId();
                 glUniform1i(shaders->textureId(), 0);
                 glActiveTexture(GL_TEXTURE0);

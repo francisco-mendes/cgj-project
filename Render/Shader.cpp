@@ -115,9 +115,10 @@ namespace render
         : program_id_ {std::exchange(other.program_id_, 0)},
           model_id_ {std::exchange(other.model_id_, 0)},
           color_id_ {std::exchange(other.color_id_, 0)},
-          eye_id_ {std::exchange(other.eye_id_, 0)},
-          light_id_ {std::exchange(other.light_id_, 0)},
           texture_id_ {std::exchange(other.texture_id_, 0)},
+          ambient_id_ {std::exchange(other.ambient_id_, 0)},
+          specular_id_ {std::exchange(other.specular_id_, 0)},
+          shininess_id_ {std::exchange(other.shininess_id_, 0)},
           is_filter_ {std::exchange(other.is_filter_, false)}
     {}
 
@@ -125,13 +126,14 @@ namespace render
     {
         if (this != &other)
         {
-            program_id_ = std::exchange(other.program_id_, 0);
-            model_id_   = std::exchange(other.model_id_, 0);
-            color_id_   = std::exchange(other.color_id_, 0);
-            eye_id_     = std::exchange(other.eye_id_, 0);
-            light_id_   = std::exchange(other.light_id_, 0);
-            texture_id_ = std::exchange(other.texture_id_, 0);
-            is_filter_  = std::exchange(other.is_filter_, false);
+            program_id_   = std::exchange(other.program_id_, 0);
+            model_id_     = std::exchange(other.model_id_, 0);
+            color_id_     = std::exchange(other.color_id_, 0);
+            texture_id_   = std::exchange(other.texture_id_, 0);
+            ambient_id_   = std::exchange(other.ambient_id_, 0);
+            specular_id_  = std::exchange(other.specular_id_, 0);
+            shininess_id_ = std::exchange(other.shininess_id_, 0);
+            is_filter_    = std::exchange(other.is_filter_, false);
         }
         return *this;
     }
@@ -160,14 +162,18 @@ namespace render
         glLinkProgram(program_id_);
         checkLinkage(program_id_);
 
-        model_id_   = glGetUniformLocation(program_id_, "ModelMatrix");
-        color_id_   = glGetUniformLocation(program_id_, "Color");
-        eye_id_     = glGetUniformLocation(program_id_, "Eye");
-        light_id_   = glGetUniformLocation(program_id_, "Light");
-        texture_id_ = glGetUniformLocation(program_id_, "Texture");
+        model_id_     = glGetUniformLocation(program_id_, "ModelMatrix");
+        color_id_     = glGetUniformLocation(program_id_, "Color");
+        texture_id_   = glGetUniformLocation(program_id_, "Texture");
+        ambient_id_   = glGetUniformLocation(program_id_, "Ambient");
+        specular_id_  = glGetUniformLocation(program_id_, "Specular");
+        shininess_id_ = glGetUniformLocation(program_id_, "Shininess");
 
         auto const camera_id = glGetUniformBlockIndex(program_id_, "CameraMatrices");
         glUniformBlockBinding(program_id_, camera_id, Camera);
+
+        auto const scene_id = glGetUniformBlockIndex(program_id_, "SceneGlobals");
+        glUniformBlockBinding(program_id_, scene_id, Scene);
 
         for (auto const& shader : shaders)
         {
@@ -177,11 +183,13 @@ namespace render
 
     bool   Pipeline::isFilter() const { return is_filter_; }
     GLuint Pipeline::programId() const { return program_id_; }
+
     GLuint Pipeline::modelId() const { return model_id_; }
     GLuint Pipeline::colorId() const { return color_id_; }
-    GLuint Pipeline::eyeId() const { return eye_id_; }
-    GLuint Pipeline::lightId() const { return light_id_; }
     GLuint Pipeline::textureId() const { return texture_id_; }
+    GLuint Pipeline::ambientId() const { return ambient_id_; }
+    GLuint Pipeline::specularId() const { return specular_id_; }
+    GLuint Pipeline::shininessId() const { return shininess_id_; }
 }
 
 bool operator==(render::Pipeline const& lhs, render::Pipeline const& rhs)

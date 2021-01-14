@@ -4,19 +4,32 @@ in vec3 ex_Position;
 in vec2 ex_Texcoord;
 in vec3 ex_Normal;
 
-in vec4 ex_Color;
 out vec4 out_Color;
 
-uniform vec3 Eye;
-uniform vec3 Light;
+uniform vec4 Color;
+
+uniform vec3 Ambient;
+uniform vec3 Specular;
+uniform float Shininess;
+
 uniform sampler2D Texture;
+
+uniform SceneGlobals 
+{
+    vec3 Eye;
+    vec3 Light;
+};
 
 void main(void)
 {
-	vec3 D = normalize(Light - ex_Position);
-    vec3 N = normalize(ex_Normal);
+	vec3 light_dir = normalize(Light - ex_Position);
+    vec3 normal = normalize(ex_Normal);
+	vec3 diffuse = max(dot(light_dir, normal), 0.0) * Color.rgb;
 	
-	float intensity = max(dot(D, N), 0.0);
-    out_Color = ex_Color * texture(Texture, ex_Texcoord);
-	out_Color.xyz *= intensity;
+    vec3 view_dir = normalize(Eye - ex_Position);
+    vec3 reflect_dir = reflect(-light_dir, normal);  
+	vec3 specular = pow(max(dot(view_dir, reflect_dir), 0.0), Shininess) * Specular;
+	
+	out_Color = vec4(Ambient + diffuse + specular, Color.a);
+    out_Color *= texture(Texture, ex_Texcoord);
 }

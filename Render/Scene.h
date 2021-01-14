@@ -6,6 +6,7 @@
 #include "Mesh.h"
 #include "Object.h"
 #include "Filter.h"
+#include "SceneBlock.h"
 #include "Shader.h"
 #include "../Engine/GlInit.h"
 
@@ -40,6 +41,7 @@ namespace render
         std::unique_ptr<Object> root_;
         Ptr<Pipeline const>     default_shader_;
         Texture                 default_texture_ = Texture::white();
+        SceneBlock              scene_block_     = SceneBlock(Pipeline::Scene);
     public:
         Vector3          light_position;
         CameraController camera_controller;

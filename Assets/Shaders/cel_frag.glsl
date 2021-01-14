@@ -4,12 +4,16 @@ in vec3 ex_Position;
 in vec2 ex_Texcoord;
 in vec3 ex_Normal;
 
-in vec4 ex_Color;
 out vec4 out_Color;
 
-uniform vec3 Eye;
-uniform vec3 Light;
+uniform vec4 Color;
 uniform sampler2D Texture;
+
+uniform SceneGlobals 
+{
+    vec3 Eye;
+    vec3 Light;
+};
 
 void main(void)
 {
@@ -33,6 +37,7 @@ void main(void)
 	if (dot(eye, N) < 0.3) {
 	    intensity = 0;
     }
-	out_Color = ex_Color * texture(Texture, ex_Texcoord);
+    
+	out_Color = Color * texture(Texture, ex_Texcoord);
 	out_Color.xyz *= intensity;
 }

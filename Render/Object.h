@@ -51,6 +51,9 @@ namespace render
         OptPtr<Texture const>  texture;
 
         Vector4   color;
+        Vector3   ambient_color  = Vector3::filled(0.11f);
+        Vector3   specular_color = Vector3::filled(0.15f);
+        float     shininess      = 32;
         Transform transform;
 
         std::optional<Animation> animation;

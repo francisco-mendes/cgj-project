@@ -122,6 +122,7 @@
         <ClCompile Include = "Render\Mesh.cpp" />
         <ClCompile Include = "Render\Object.cpp" />
         <ClCompile Include = "Render\Scene.cpp" />
+        <ClCompile Include = "Render\SceneBlock.cpp" />
         <ClCompile Include = "Render\Shader.cpp" />
         <ClCompile Include = "Render\Texture.cpp" />
         <ClCompile Include = "Render\Transform.cpp" />
@@ -136,6 +137,7 @@
         <ClInclude Include = "lib\stb\include\stb_image.h" />
         <ClInclude Include = "Render\Filter.h" />
         <ClInclude Include = "Render\Object.h" />
+        <ClInclude Include = "Render\SceneBlock.h" />
         <ClInclude Include = "Render\Texture.h" />
         <ClInclude Include = "Render\Transform.h" />
         <ClInclude Include = "Utils.h" />

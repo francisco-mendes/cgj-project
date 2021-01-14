@@ -50,8 +50,9 @@ namespace render
         constexpr static GLuint Normal   = 2;
 
         constexpr static GLuint Camera = 0;
+        constexpr static GLuint Scene  = 1;
     private:
-        GLuint program_id_, model_id_, color_id_, eye_id_, light_id_, texture_id_;
+        GLuint program_id_, model_id_, color_id_, texture_id_, ambient_id_, specular_id_, shininess_id_;
         bool   is_filter_;
     public:
         Pipeline(Pipeline const&)            = delete;
@@ -72,11 +73,14 @@ namespace render
 
         [[nodiscard]] bool   isFilter() const;
         [[nodiscard]] GLuint programId() const;
+
         [[nodiscard]] GLuint modelId() const;
         [[nodiscard]] GLuint colorId() const;
-        [[nodiscard]] GLuint eyeId() const;
-        [[nodiscard]] GLuint lightId() const;
         [[nodiscard]] GLuint textureId() const;
+        
+        [[nodiscard]] GLuint ambientId() const;
+        [[nodiscard]] GLuint specularId() const;
+        [[nodiscard]] GLuint shininessId() const;
     };
 }
 
