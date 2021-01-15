@@ -24,11 +24,11 @@ namespace engine
         void reset();
         void set(Ptr<Type const> mesh);
 
-        Ptr<Type> next();
-        Ptr<Type> prev();
-        Ptr<Type> load(Loader&& loader);
+        OptPtr<Type> next();
+        OptPtr<Type> prev();
+        OptPtr<Type> load(Loader&& loader);
 
-        Ptr<Type const> get() const;
+        OptPtr<Type const> get() const;
     };
 
     class TextureController
@@ -46,11 +46,11 @@ namespace engine
         void reset();
         void set(Ptr<Type const> texture);
 
-        Ptr<Type> next();
-        Ptr<Type> prev();
-        Ptr<Type> load(Loader&& loader);
+        OptPtr<Type> next();
+        OptPtr<Type> prev();
+        OptPtr<Type> load(Loader&& loader);
 
-        Ptr<Type const> get() const;
+        OptPtr<Type const> get() const;
     };
 
     class PipelineController
@@ -67,10 +67,10 @@ namespace engine
         void reset();
         void set(Ptr<Type const> pipeline);
 
-        Ptr<Type> next();
-        Ptr<Type> prev();
+        OptPtr<Type> next();
+        OptPtr<Type> prev();
 
-        Ptr<Type const> get() const;
+        OptPtr<Type const> get() const;
     };
 
     class FilterController
@@ -86,11 +86,11 @@ namespace engine
 
         void reset();
 
-        Ptr<Type> next();
-        Ptr<Type> prev();
+        OptPtr<Type> next();
+        OptPtr<Type> prev();
 
-        Ptr<Type const> get() const;
-        Ptr<Type>       get();
+        OptPtr<Type const> get() const;
+        OptPtr<Type>       get();
     };
 
     class ObjectController
@@ -104,17 +104,48 @@ namespace engine
     public:
         explicit ObjectController(Ptr<Type> root);
 
-        void                reset();
-        void                recurse();
-        Ptr<render::Object> parent();
+        void                   reset();
+        void                   recurse();
+        OptPtr<render::Object> parent();
 
-        Ptr<Type> next();
-        Ptr<Type> prev();
+        OptPtr<Type> next();
+        OptPtr<Type> prev();
 
-        Ptr<Type> create();
-        void      remove();
+        OptPtr<Type> create();
+        void         remove();
 
-        Ptr<Type const> get() const;
-        Ptr<Type>       get();
+        OptPtr<Type const> get() const;
+        OptPtr<Type>       get();
+    };
+
+    class FileController
+    {
+    public:
+        using Type = std::filesystem::path;
+        using Collection = std::vector<Type>;
+
+        enum class AssetType: bool
+        {
+            Mesh = false,
+            Texture = true
+        };
+
+    private:
+        Collection           files_;
+        Collection::iterator iter_;
+
+        Type meshes_, textures_;
+
+    public:
+        explicit FileController(config::Paths const& paths);
+
+        void reset();
+        void set(AssetType assets);
+
+        OptPtr<Type> next();
+        OptPtr<Type> prev();
+
+        OptPtr<Type const> get() const;
+        OptPtr<Type>       get();
     };
 }

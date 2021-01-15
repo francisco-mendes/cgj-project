@@ -22,7 +22,7 @@ void main(void)
 
     vec3 eye = normalize(Eye);
 
-	float intensity =  dot(D, N);
+	float intensity = dot(D, N);
 	
 	if (intensity > 0.95) {
 		intensity = 1;
