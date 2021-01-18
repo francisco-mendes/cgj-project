@@ -49,12 +49,17 @@ namespace render
     }
 
     void Object::draw(
-        Matrix4 const&               parent_transform,
+        Matrix4 const& parent_transform,
         OptPtr<Pipeline const> const parent_shaders,
-        Scene const&                 scene
+        Scene const& scene,
+        bool const                   override_shaders
     ) const
     {
-        auto const shaders = this->shaders != nullptr ? this->shaders : parent_shaders;
+        auto const shaders = override_shaders
+            ? parent_shaders
+            : this->shaders != nullptr
+            ? this->shaders
+            : parent_shaders;
         assert(shaders != nullptr);
 
         if (shaders != parent_shaders) { glUseProgram(shaders->programId()); }
@@ -79,12 +84,12 @@ namespace render
                 glUniform1i(shaders->textureId(), 0);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, texture_bind);
-
+                glUniform1i(shaders->ShadowMapId(), 1);
                 glUniformMatrix4fv(shaders->modelId(), 1, GL_TRUE, model_matrix.inner);
                 glBindVertexArray(mesh->vaoId());
                 glDrawArrays(GL_TRIANGLES, 0, mesh->vertexCount());
             }
-            for (auto const& child : children) { child.draw(model_matrix, shaders, scene); }
+            for (auto const& child : children) { child.draw(model_matrix, shaders, scene, override_shaders); }
         }
         if (shaders != parent_shaders && parent_shaders != nullptr) { glUseProgram(parent_shaders->programId()); }
     }

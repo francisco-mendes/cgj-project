@@ -38,6 +38,11 @@ namespace render
         std::deque<Texture>  textures_;
         std::deque<Filter>   filters_;
 
+        unsigned int depthMapFB;
+        unsigned int depthMap;
+        unsigned int shadowMapBuffer;
+        Pipeline shadowShader;
+
         std::unique_ptr<Object> root_;
         Ptr<Pipeline const>     default_shader_;
         Texture                 default_texture_ = Texture::white();
@@ -53,6 +58,10 @@ namespace render
         void render(engine::Engine&, double elapsed_sec);
         void animate();
         void resizeFilters(callback::WindowSize size);
+
+        void renderWithShadow(engine::Engine&);
+        Matrix4 createLigthMatrix();
+        void genShadowBuffers();
 
         [[nodiscard]] Texture const& defaultTexture() const;
     };

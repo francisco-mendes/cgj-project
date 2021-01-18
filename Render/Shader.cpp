@@ -168,12 +168,16 @@ namespace render
         ambient_id_   = glGetUniformLocation(program_id_, "Ambient");
         specular_id_  = glGetUniformLocation(program_id_, "Specular");
         shininess_id_ = glGetUniformLocation(program_id_, "Shininess");
+        shadowMap_id_ = glGetUniformLocation(program_id_, "shadowMap");
 
         auto const camera_id = glGetUniformBlockIndex(program_id_, "CameraMatrices");
         glUniformBlockBinding(program_id_, camera_id, Camera);
 
         auto const scene_id = glGetUniformBlockIndex(program_id_, "SceneGlobals");
         glUniformBlockBinding(program_id_, scene_id, Scene);
+
+        auto const lightSpaceMatrix_id = glGetUniformBlockIndex(program_id_, "lightSpaceMatrix");
+        glUniformBlockBinding(program_id_, lightSpaceMatrix_id, LightSpace);
 
         for (auto const& shader : shaders)
         {
@@ -190,6 +194,7 @@ namespace render
     GLuint Pipeline::ambientId() const { return ambient_id_; }
     GLuint Pipeline::specularId() const { return specular_id_; }
     GLuint Pipeline::shininessId() const { return shininess_id_; }
+    GLuint Pipeline::ShadowMapId() const { return shadowMap_id_; }
 }
 
 bool operator==(render::Pipeline const& lhs, render::Pipeline const& rhs)
