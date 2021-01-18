@@ -33,8 +33,8 @@ uniform sampler2D screenTexture;
     mediump float h = -im1p1 - 2.0 * i0p1 - ip1p1 + im1m1 + 2.0 * i0m1 + ip1m1;
     mediump float v = -im1m1 - 2.0 * im10 - im1p1 + ip1m1 + 2.0 * ip10 + ip1p1;
 
-    mediump float mag = 1.0 - length(vec2(h, v));
+    mediump float mag = 1 - length(vec2(h, v));
     mediump vec3 target = vec3(mag);
-
-    gl_FragColor = vec4(mix(textureColor, target, intensity), 1.0);
+    
+    FragColor = vec4(mix(textureColor, target, intensity), 1.0);
  }
