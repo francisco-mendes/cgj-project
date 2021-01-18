@@ -1,58 +1,57 @@
 ﻿#include "Texture.h"
 
-#include <fstream>
+#include <iostream>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 
-namespace
-{
-    void deleter(void* buffer)
-    {
-        delete[] static_cast<stbi_uc*>(buffer);
-    }
-}
+#include "FreeImage.h"
 
 namespace render
 {
+    void TextureLoader::Deleter::operator()(FIBITMAP* data) const { FreeImage_Unload(data); }
+
     TextureLoader TextureLoader::fromFile(std::filesystem::path const& texture_file)
     {
-        if (!exists(texture_file))
-            throw std::invalid_argument("File not found: " + texture_file.string());
-
-        if (FILE* file; _wfopen_s(&file, texture_file.c_str(), L"rb") == 0)
+        try
         {
-            int width, height, channels;
+            if (!exists(texture_file))
+                throw std::invalid_argument("File not found: " + texture_file.string());
 
-            stbi_set_flip_vertically_on_load(true);
-            auto data = std::unique_ptr<stbi_uc[], Deleter>(
-                stbi_load_from_file(file, &width, &height, &channels, 4),
-                stbi_image_free
-            );
-            fclose(file);
+            auto const filename = texture_file.c_str();
+            auto const loaded   = FreeImage_LoadU(FreeImage_GetFileTypeU(filename), filename);
+            if (loaded == nullptr)
+                throw std::invalid_argument("Cannot open texture file: " + texture_file.generic_string());
 
-            if (data.get() == nullptr)
-                throw std::invalid_argument("Invalid texture file: " + texture_file.generic_string());
-            assert(channels == 4);
+            auto const image = FreeImage_ConvertTo32Bits(loaded);
+            if (image == nullptr)
+                throw std::invalid_argument("Cannot use texture file: " + texture_file.generic_string());
 
-            return TextureLoader {width, height, std::move(data)};
+            FreeImage_FlipVertical(image);
+            auto const width  = FreeImage_GetWidth(image);
+            auto const height = FreeImage_GetHeight(image);
+
+            return TextureLoader {width, height, Buffer {image}};
         }
-        throw std::invalid_argument("Cannot open texture file: " + texture_file.generic_string());
+        catch (...)
+        {
+            std::cerr << "Error loading texture at " << texture_file << '.' << std::endl;
+            throw;
+        }
     }
 
-    TextureLoader TextureLoader::white(const int size)
+    TextureLoader TextureLoader::white(unsigned const len)
     {
-        auto const len = size * size * sizeof(float);
-
-        auto buf = new stbi_uc[len];
-        std::fill_n(buf, len, 0xFF);
-
-        auto data = std::unique_ptr<stbi_uc[], Deleter>(buf, deleter);
-        return {size, size, std::move(data)};
+        auto const color = RGBQUAD {0xFF, 0xFF, 0xFF, 0xFF};
+        auto const data  = FreeImage_AllocateEx(len, len, 32, &color);
+        return {len, len, Buffer {data}};
     }
 
     Texture::Texture(TextureLoader&& texture)
     {
+        #if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
+        constexpr auto Format = GL_BGRA;
+        #else
+        constexpr auto Format = GL_RGBA;
+        #endif
         auto const [width, height, data] = std::move(texture);
         glGenTextures(1, &tex_id_);
         glBindTexture(GL_TEXTURE_2D, tex_id_);
@@ -63,7 +62,8 @@ namespace render
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.get());
+        auto const pixels = FreeImage_GetBits(data.get());
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, Format, GL_UNSIGNED_BYTE, pixels);
         glGenerateMipmap(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -75,7 +75,7 @@ namespace render
 
     Texture Texture::white()
     {
-        constexpr auto Size = 16;
+        constexpr auto Size = 4;
 
         return TextureLoader::white(Size);
     }

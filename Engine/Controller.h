@@ -136,6 +136,8 @@ namespace engine
 
         Type meshes_, textures_;
 
+        std::optional<AssetType> current_;
+
     public:
         explicit FileController(config::Paths const& paths);
 
@@ -147,5 +149,8 @@ namespace engine
 
         OptPtr<Type const> get() const;
         OptPtr<Type>       get();
+
+        bool loadingMeshes() const;
+        bool loadingTextures() const;
     };
 }

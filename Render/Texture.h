@@ -1,21 +1,25 @@
 ﻿#pragma once
 #include <filesystem>
 
-#include "stb_image.h"
+#include "FreeImage.h"
 #include "GL/glew.h"
 
 namespace render
 {
     struct TextureLoader
     {
-        using Deleter = void(*)(void*);
+        struct Deleter
+        {
+            void operator()(FIBITMAP* data) const;
+        };
 
-        static TextureLoader fromFile(std::filesystem::path const& mesh_file);
-        static TextureLoader white(int size);
+        using Buffer = std::unique_ptr<FIBITMAP, Deleter>;
 
-        int width, height;
+        static TextureLoader fromFile(std::filesystem::path const& texture_file);
+        static TextureLoader white(unsigned len);
 
-        std::unique_ptr<stbi_uc[], Deleter> data;
+        unsigned width, height;
+        Buffer   data;
     };
 
     class Texture

@@ -134,7 +134,6 @@
         <ClInclude Include = "Engine\GlfwHandle.h" />
         <ClInclude Include = "Engine\GlInit.h" />
         <ClInclude Include = "Engine\Controller.h" />
-        <ClInclude Include = "lib\stb\include\stb_image.h" />
         <ClInclude Include = "Render\Filter.h" />
         <ClInclude Include = "Render\Object.h" />
         <ClInclude Include = "Render\SceneBlock.h" />

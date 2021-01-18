@@ -8,6 +8,7 @@
 #include "Utils.h"
 #include "Engine/Engine.h"
 #include "Engine/GlInit.h"
+#include "Render/Mesh.h"
 #include "Render/Object.h"
 #include "Render/Shader.h"
 
@@ -77,6 +78,49 @@ namespace config::hooks
                 // Keybindings for functions not related with the scene. 
             case GLFW_KEY_F2:
                 engine.snapshot();
+                break;
+            case GLFW_KEY_F3:
+                engine.file_controller.set(engine::FileController::AssetType::Mesh);
+                std::cout << "set to load meshes" << std::endl;
+                break;
+            case GLFW_KEY_F4:
+                engine.file_controller.set(engine::FileController::AssetType::Texture);
+                std::cout << "set to load textures" << std::endl;
+                break;
+            case GLFW_KEY_F5:
+                if (const auto path = engine.file_controller.prev(); path != nullptr)
+                    std::cout << "current selected asset: " << *path << std::endl;
+                else
+                    std::cout << "no asset selected" << std::endl;
+                break;
+            case GLFW_KEY_F6:
+                if (const auto path = engine.file_controller.next(); path != nullptr)
+                    std::cout << "current selected asset: " << *path << std::endl;
+                else
+                    std::cout << "no asset selected" << std::endl;
+                break;
+            case GLFW_KEY_F7:
+                if (const auto path = engine.file_controller.get(); path != nullptr)
+                {
+                    if (engine.file_controller.loadingMeshes())
+                    {
+                        try { engine.mesh_controller.load(render::MeshLoader::fromFile(*path)); }
+                        catch (...) { }
+                    }
+                    else if (engine.file_controller.loadingTextures())
+                    {
+                        try { engine.texture_controller.load(render::TextureLoader::fromFile(*path)); }
+                        catch (...) { }
+                    }
+                    else
+                    {
+                        std::cerr << "cannot load unknown asset" << std::endl;
+                    }
+                }
+                else
+                {
+                    std::cerr << "cannot load asset: none is selected" << std::endl;
+                }
                 break;
             case GLFW_KEY_F11:
                 engine.scene.animate();
@@ -187,6 +231,7 @@ namespace config::hooks
     {
         auto const [width, height] = settings.window.size;
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+        glEnable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_TRUE);
@@ -432,14 +477,14 @@ namespace config::hooks
 
     void beforeRender(render::Scene& scene, engine::Engine& engine, double const elapsed_sec)
     {
-        if (engine.filter_controller.get() != nullptr)
-            engine.filter_controller.get()->bind();
+        if (auto filter = engine.filter_controller.get(); filter != nullptr)
+            filter->bind();
     }
 
     void afterRender(render::Scene& scene, engine::Engine& engine, double const elapsed_sec)
     {
-        if (engine.filter_controller.get() != nullptr)
-            engine.filter_controller.get()->finish();
+        if (auto filter = engine.filter_controller.get(); filter != nullptr)
+            filter->finish();
     }
 
     #pragma endregion Scene

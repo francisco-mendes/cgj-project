@@ -25,6 +25,7 @@ namespace engine
         PipelineController pipeline_controller;
         FilterController   filter_controller;
         ObjectController   object_controller;
+        FileController     file_controller;
 
     private:
         Engine(GlfwHandle glfw, render::Scene scene, config::Settings const& settings);

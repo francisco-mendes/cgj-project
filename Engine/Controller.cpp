@@ -40,12 +40,13 @@ namespace
         return rerefImpl(cs, iter);
     }
 
-    void scanImpl(std::vector<path>& files, path const& dir, std::wstring_view extension)
+    std::vector<path>::iterator scanImpl(std::vector<path>& files, path const& dir, std::wstring_view const extension)
     {
         files.clear();
         for (auto& entry : recursive_directory_iterator(dir, directory_options::skip_permission_denied))
             if (auto& p = entry.path(); entry.is_regular_file() && p.extension() == extension)
                 files.push_back(p);
+        return files.end();
     }
 }
 
@@ -77,7 +78,8 @@ namespace engine
     {}
 
     FileController::FileController(config::Paths const& paths)
-        : meshes_ {paths.meshes},
+        : iter_ {files_.end()},
+          meshes_ {paths.meshes},
           textures_ {paths.textures}
     {}
 
@@ -87,7 +89,12 @@ namespace engine
     void PipelineController::reset() { iter_ = items_->end(); }
     void FilterController::reset() { iter_ = items_->end(); }
     void ObjectController::reset() { iter_ = obj_->children.end(); }
-    void FileController::reset() { iter_ = files_.erase(files_.begin(), files_.end()); }
+
+    void FileController::reset()
+    {
+        iter_    = files_.erase(files_.begin(), files_.end());
+        current_ = std::nullopt;
+    }
 
     void MeshController::set(Ptr<Type const> const mesh) { iter_ = findImpl(*items_, mesh); }
     void PipelineController::set(Ptr<Type const> const pipeline) { iter_ = findImpl(*items_, pipeline); }
@@ -98,13 +105,15 @@ namespace engine
         switch (assets)
         {
         case AssetType::Mesh:
-            scanImpl(files_, meshes_, L".obj");
+            iter_ = scanImpl(files_, meshes_, L".obj");
             break;
         case AssetType::Texture:
-            scanImpl(files_, textures_, L".png");
+            iter_ = scanImpl(files_, textures_, L".png");
             break;
-        default: throw std::invalid_argument("Invalid AssetType enum variant.");
+        default:
+            throw std::invalid_argument("Invalid AssetType enum variant.");
         }
+        current_ = assets;
     }
 
 
@@ -198,4 +207,7 @@ namespace engine
 
     OptPtr<FileController::Type const> FileController::get() const { return rerefImpl(files_, iter_); }
     OptPtr<FileController::Type>       FileController::get() { return rerefImpl(files_, iter_); }
+
+    bool FileController::loadingMeshes() const { return current_.has_value() && current_ == AssetType::Mesh; }
+    bool FileController::loadingTextures() const { return current_.has_value() && current_ == AssetType::Texture; }
 }

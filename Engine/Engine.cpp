@@ -13,7 +13,8 @@ namespace engine
           texture_controller {&this->scene.textures_},
           pipeline_controller {&this->scene.shaders_},
           filter_controller {&this->scene.filters_},
-          object_controller {this->scene.root_.get()}
+          object_controller {this->scene.root_.get()},
+          file_controller {settings.paths}
     {
         auto const [width, height] = settings.window.size;
 
@@ -60,12 +61,17 @@ namespace engine
 
     void Engine::snapshot()
     {
+        #if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BRG
+        constexpr auto Format = GL_BGR;
+        #else
+        constexpr auto Format = GL_RGB;
+        #endif
         auto const [width, height] = size_;
         auto const stride          = width * 3;
 
         std::vector<BYTE> pixels(stride * height);
 
-        glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels.data());
+        glReadPixels(0, 0, width, height, Format, GL_UNSIGNED_BYTE, pixels.data());
 
         // Convert to FreeImage format & save to file
         auto const image    = FreeImage_ConvertFromRawBits(pixels.data(), width, height, stride, 24, 0, 0, 0, false);
