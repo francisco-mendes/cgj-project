@@ -10,9 +10,9 @@ const float offset = 1.0 / 300.0;
 void main(void)
 {
     float kernel[9]=float[](
-        2.,0.,0.,
-        0.,-1.,0.,
-        0.,0.,-1.
+        -2.,-1.,0.,
+        -1.,1.,1.,
+        0.,1.,2.
     );
     
     vec2 offsets[9] = vec2[](
