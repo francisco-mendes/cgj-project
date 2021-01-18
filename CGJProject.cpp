@@ -258,7 +258,7 @@ namespace config::hooks
         auto const& [meshes, textures, shaders, filters, _] = settings.paths;
 
         Ptr<Pipeline const>                 bp_pipeline, cel_pipeline;
-        std::array<Ptr<Pipeline const>, 15> filter_pipelines;
+        std::array<Ptr<Pipeline const>, 12> filter_pipelines;
         Ptr<Mesh const>                     plane_mesh, piece_mesh;
 
         logTimeTaken(
@@ -333,16 +333,7 @@ namespace config::hooks
                     Shader::fromFile(Shader::Vertex, filters / "emboss_vert.glsl"),
                     Shader::fromFile(Shader::Fragment, filters / "emboss_frag.glsl")
                 );
-                builder.shaders.emplace_back(
-                    true,
-                    Shader::fromFile(Shader::Vertex, filters / "sobel_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, filters / "sobel_frag.glsl")
-                );
-                builder.shaders.emplace_back(
-                    true,
-                    Shader::fromFile(Shader::Vertex, filters / "highSaturation_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, filters / "highSaturation_frag.glsl")
-                );
+                
                 builder.shaders.emplace_back(
                     true,
                     Shader::fromFile(Shader::Vertex, filters / "blur_vert.glsl"),
@@ -357,11 +348,6 @@ namespace config::hooks
                     true,
                     Shader::fromFile(Shader::Vertex, filters / "oilPainting_vert.glsl"),
                     Shader::fromFile(Shader::Fragment, filters / "oilPainting_frag.glsl")
-                );
-                builder.shaders.emplace_back(
-                    true,
-                    Shader::fromFile(Shader::Vertex, filters / "swirl_vert.glsl"),
-                    Shader::fromFile(Shader::Fragment, filters / "swirl_frag.glsl")
                 );
 
                 std::transform(
