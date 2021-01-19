@@ -11,10 +11,13 @@
 #include "Render/Mesh.h"
 #include "Render/Object.h"
 #include "Render/Shader.h"
+#include "JSON/JsonFile.h"
 
 namespace config::hooks
 {
     #pragma region Callbacks
+    Settings currentSettings;
+    std::filesystem::path currentPlaneMesh, currentPieceMesh;
 
     void onWindowClose([[maybe_unused]] engine::Engine& engine) {}
 
@@ -219,6 +222,12 @@ namespace config::hooks
                 if (auto const obj = engine.object_controller.get(); obj != nullptr)
                     engine.object_controller.get()->mesh = engine.mesh_controller.next();
                 break;
+            case GLFW_KEY_N:
+                jsonFile::saveFile(currentSettings, currentPlaneMesh, currentPieceMesh);
+                break;
+            case GLFW_KEY_M:
+                jsonFile::loadFile();
+                break;
                 #pragma endregion Row2
             }
     }
@@ -261,6 +270,8 @@ namespace config::hooks
         std::array<Ptr<Pipeline const>, 12> filter_pipelines;
         Ptr<Mesh const>                     plane_mesh, piece_mesh;
 
+        currentSettings = settings;
+
         logTimeTaken(
             "Loading Assets",
             [&]()
@@ -268,6 +279,9 @@ namespace config::hooks
                 plane_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(meshes / "Plane.obj"));
                 &builder.meshes.emplace_back(MeshLoader::fromFile(meshes / "Cube.obj"));
                 piece_mesh = &builder.meshes.emplace_back(MeshLoader::fromFile(meshes / "Sphere16.obj"));
+
+                currentPlaneMesh = meshes / "Plane.obj";
+                currentPieceMesh = meshes / "Sphere16.obj";
 
                 &builder.textures.emplace_back(TextureLoader::fromFile(textures / "awesomeface.png"));
             }
