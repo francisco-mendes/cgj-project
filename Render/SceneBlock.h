@@ -15,7 +15,6 @@ namespace render
         SceneBlock& operator=(SceneBlock const& other) = delete;
 
         SceneBlock(SceneBlock&& other) noexcept;
-
         SceneBlock& operator=(SceneBlock&& other) noexcept;
 
         ~SceneBlock();

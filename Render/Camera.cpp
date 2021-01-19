@@ -3,18 +3,23 @@
 
 #include <iostream>
 
+namespace
+{
+    Matrix4 projectionMatrix(callback::WindowSize const size)
+    {
+        return Matrix4::perspective(
+            30.f,
+            size.width / static_cast<float>(size.height),
+            render::Camera::NearPlane,
+            render::Camera::FarPlane
+        );
+    }
+}
+
 namespace render
 {
     constexpr auto AngleScale = static_cast<float>(DPi / 1000);
     constexpr auto Facing     = Vector3 {0, 0, 1};
-
-    namespace
-    {
-        Matrix4 projectionMatrix(callback::WindowSize const size)
-        {
-            return Matrix4::perspective(30.f, size.width / static_cast<float>(size.height), 0.5f, 100.f);
-        }
-    }
 
     Camera::Camera(float const distance, Vector3 const focus, GLuint const view_id)
         : focus_ {focus},
@@ -104,7 +109,10 @@ namespace render
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
         position_ = rotation_matrix * Vector3 {0, 0, distance_};
+        position_ = position_ + focus_;
     }
+
+    Vector3 Camera::position() const { return position_; }
 
     Matrix4 Camera::rotationMatrix(Vector2 const drag_delta) const
     {

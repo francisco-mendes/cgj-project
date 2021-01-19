@@ -15,6 +15,8 @@ namespace render
     class Camera
     {
     public:
+        constexpr static auto NearPlane = 0.5f, FarPlane = 100.f;
+
         using Rotation = std::variant<Matrix4, Quaternion>;
 
     private:
@@ -45,7 +47,7 @@ namespace render
         void update(callback::WindowSize size, Vector2 drag_delta, float zoom);
 
 
-        [[nodiscard]] Vector3 position() const { return position_; }
+        [[nodiscard]] Vector3 position() const;
     private:
         [[nodiscard]] Matrix4  rotationMatrix(Vector2 drag_delta) const;
         [[nodiscard]] Rotation fullRotation(Vector2 drag_delta) const;

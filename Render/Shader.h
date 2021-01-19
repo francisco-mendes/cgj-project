@@ -49,11 +49,14 @@ namespace render
         constexpr static GLuint Texture  = 1;
         constexpr static GLuint Normal   = 2;
 
-        constexpr static GLuint Camera = 0;
-        constexpr static GLuint Scene  = 1;
-        constexpr static GLuint LightSpace = 2;
+        constexpr static GLuint Camera  = 0;
+        constexpr static GLuint Scene   = 1;
+        constexpr static GLuint Shadows = 2;
     private:
-        GLuint program_id_, model_id_, color_id_, texture_id_, ambient_id_, specular_id_, shininess_id_, shadowMap_id_;
+        GLuint program_id_, model_id_,    color_id_, texture_id_;
+        GLuint ambient_id_, specular_id_, shininess_id_;
+        GLuint shadow_map_id_;
+        
         bool   is_filter_;
     public:
         Pipeline(Pipeline const&)            = delete;
@@ -78,11 +81,12 @@ namespace render
         [[nodiscard]] GLuint modelId() const;
         [[nodiscard]] GLuint colorId() const;
         [[nodiscard]] GLuint textureId() const;
-        
+
         [[nodiscard]] GLuint ambientId() const;
         [[nodiscard]] GLuint specularId() const;
         [[nodiscard]] GLuint shininessId() const;
-        [[nodiscard]] GLuint ShadowMapId() const;
+
+        [[nodiscard]] GLuint shadowMapId() const;
     };
 }
 

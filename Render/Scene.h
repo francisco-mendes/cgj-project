@@ -8,6 +8,8 @@
 #include "Filter.h"
 #include "SceneBlock.h"
 #include "Shader.h"
+#include "ShadowStage.h"
+#include "../Config.h"
 #include "../Engine/GlInit.h"
 
 namespace render
@@ -38,30 +40,22 @@ namespace render
         std::deque<Texture>  textures_;
         std::deque<Filter>   filters_;
 
-        unsigned int depthMapFB;
-        unsigned int depthMap;
-        unsigned int shadowMapBuffer;
-        Pipeline shadowShader;
-
         std::unique_ptr<Object> root_;
         Ptr<Pipeline const>     default_shader_;
         Texture                 default_texture_ = Texture::white();
         SceneBlock              scene_block_     = SceneBlock(Pipeline::Scene);
+        ShadowStage             shadow_stage_;
     public:
         Vector3          light_position;
         CameraController camera_controller;
     private:
-        Scene(Builder&& builder);
+        Scene(Builder&& builder, config::Settings const& settings);
     public:
         static Scene setup(engine::GlInit gl_init, config::Settings const& settings);
 
         void render(engine::Engine&, double elapsed_sec);
         void animate();
         void resizeFilters(callback::WindowSize size);
-
-        void renderWithShadow(engine::Engine&);
-        Matrix4 createLigthMatrix();
-        void genShadowBuffers();
 
         [[nodiscard]] Texture const& defaultTexture() const;
     };

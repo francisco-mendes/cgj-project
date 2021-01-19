@@ -220,6 +220,34 @@ namespace config::hooks
                     engine.object_controller.get()->mesh = engine.mesh_controller.next();
                 break;
                 #pragma endregion Row2
+
+                #pragma region Row3
+                // Keybindings for manipulating the selected object's ambient and specular color properties
+            case GLFW_KEY_B:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    obj->ambient_color = obj->ambient_color - 0.025f;
+                break;
+            case GLFW_KEY_N:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    obj->ambient_color = obj->ambient_color + 0.025f;
+                break;
+            case GLFW_KEY_M:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    obj->specular_color = obj->specular_color - 0.1f;
+                break;
+            case GLFW_KEY_COMMA:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    obj->specular_color = obj->specular_color + 0.1f;
+                break;
+            case GLFW_KEY_PERIOD:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    obj->shininess /= 2.f;
+                break;
+            case GLFW_KEY_SLASH:
+                if (auto const obj = engine.object_controller.get(); obj != nullptr)
+                    obj->shininess *= 2.f;
+                break;
+                #pragma endregion Row3
             }
     }
 
@@ -232,6 +260,7 @@ namespace config::hooks
         auto const [width, height] = settings.window.size;
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
         glDepthMask(GL_TRUE);
@@ -477,15 +506,11 @@ namespace config::hooks
 
     void beforeRender(render::Scene& scene, engine::Engine& engine, double const elapsed_sec)
     {
-        if (auto filter = engine.filter_controller.get(); filter != nullptr)
-            filter->bind();
+        scene.light_position.z = sin(glfwGetTime() * 0.5f) * 2.f + 5.f;
     }
 
     void afterRender(render::Scene& scene, engine::Engine& engine, double const elapsed_sec)
-    {
-        if (auto filter = engine.filter_controller.get(); filter != nullptr)
-            filter->finish();
-    }
+    { }
 
     #pragma endregion Scene
 }

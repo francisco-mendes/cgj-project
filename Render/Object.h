@@ -29,11 +29,12 @@ namespace render
         void animate();
         void update(double elapsed_sec);
         void draw(
-            Matrix4 const& parent_transform,
+            Matrix4 const&         parent_transform,
             OptPtr<Pipeline const> parent_shaders,
-            Scene const& scene,
+            Scene const&           scene,
             bool                   override_shaders = false
         ) const;
+
         Object& emplaceChild(
             OptPtr<Mesh const>     mesh,
             Vector4                color,
